@@ -6,17 +6,29 @@ from typing import Optional
 import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
-from ark.buffs.buffs import Buff, broken_bones, hungry, thirsty
-from ark.exceptions import InventoryNotAccessibleError, PlayerDidntTravelError
-from ark.inventories import Inventory, PlayerInventory
-from ark.items.items import Y_TRAP, Item
-from ark.structures.structure import Structure
-from bot.ark_bot import ArkBot
+from .._ark import Ark
+from ..buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
+from ..exceptions import InventoryNotAccessibleError, PlayerDidntTravelError
+from ..interfaces import Inventory, PlayerInventory
+from ..items import Y_TRAP, Item
+from ..structures import Structure
 
 
-class Player(ArkBot):
+class Player(Ark):
     """Represents the player in ark.
-    Contains methods related to the player has its own inventory attribute."""
+
+    Provides the ability to control the player to do most actions
+    a normal player could do. The inventory can be accessed through
+    the players `inventory` attribute.
+
+    Attributes
+    ----------
+    inventory :class:`PlayerInventory`:
+        The players inventory
+
+    hotbar :class:`list[str]`:
+        The players hotbar slots
+    """
 
     DEBUFF_REGION = (1270, 950, 610, 130)
     HP_BAR = (1882, 1022, 15, 50)
@@ -37,11 +49,12 @@ class Player(ArkBot):
         ]
 
     def set_first_person(self) -> None:
+        """Sets the player to first person"""
         pg.scroll(100)
 
     def has_died(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/you_died.png", region=(630, 10, 590, 80), confidence=0.7
             )
             is not None
@@ -83,7 +96,6 @@ class Player(ArkBot):
 
     def spam_hotbar(self):
         """Typewrites all the hotbar keys with crystals on them to open crystals fast."""
-        self.check_status()
         pg.typewrite("".join(c for c in self.HOTBAR), interval=0.01)
 
     def set_hotbar(self) -> None:
@@ -98,7 +110,7 @@ class Player(ArkBot):
     def is_spawned(self) -> bool:
         """Checks if the player is spawned"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/stamina.png", region=(1850, 955, 70, 65), confidence=0.65
             )
             is not None
@@ -106,12 +118,12 @@ class Player(ArkBot):
 
     def needs_recovery(self) -> bool:
         """Checks if the player needs to recover"""
-        return any(self.has_effect(buff) for buff in [thirsty, hungry, broken_bones])
+        return any(self.has_effect(buff) for buff in [THIRSTY, HUNGRY, BROKEN_BONES])
 
     def has_effect(self, buff: Buff) -> bool:
         """Checks if the player has the given buff"""
         return (
-            self.locate_template(buff.image, region=self.DEBUFF_REGION, confidence=0.8)
+            self.window.locate_template(buff.image, region=self.DEBUFF_REGION, confidence=0.8)
             is not None
         )
 
@@ -148,13 +160,11 @@ class Player(ArkBot):
 
     def turn_y_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' y-axis by the given amount"""
-        self.check_status()
         input.moveRel(0, amount, 0, None, False, False, True)
         self.sleep(delay)
 
     def turn_x_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' x-axis by the given amount"""
-        self.check_status()
         input.moveRel(amount, 0, 0, None, False, False, True)
         self.sleep(delay)
 
@@ -477,7 +487,7 @@ class Player(ArkBot):
 
     def item_added(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/added.png", region=(0, 450, 314, 240), confidence=0.75
             )
             is not None

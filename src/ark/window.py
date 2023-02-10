@@ -9,14 +9,12 @@ in.
 Note that the ark window class expects points and templates to be taken on 1920x1080
 resolution.
 """
-import re
 
 import cv2 as cv  # type: ignore[import]
 import numpy as np
 import PIL  # type: ignore[import]
 import pyautogui as pg  # type: ignore[import]
 import pygetwindow  # type: ignore[import]
-import win32gui  # type: ignore[import]
 from mss import mss, tools  # type: ignore[import]
 from PIL import Image, ImageOps
 from pytesseract import pytesseract as tes  # type: ignore[import]
@@ -47,8 +45,9 @@ class ArkWindow:
         Whether the game is running in fullscreen or not.
     """
 
-    TITLE_BAR_HEIGHT = 30
-    
+    _CORRECT_Y = 31
+    _CORRECT_X = 8
+
     def __init__(self) -> None:
         self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
@@ -131,8 +130,8 @@ class ArkWindow:
 
             # create a window dict for mss
             return {
-                "left": self._handle.left,
-                "top": self._handle.top,
+                "left": self._handle.left + self._CORRECT_X,
+                "top": self._handle.top + self._CORRECT_Y,
                 "width": self._handle.width,
                 "height": self._handle.height,
             }
@@ -224,8 +223,8 @@ class ArkWindow:
             )
 
         return (
-            self.monitor["left"] + x + self._boundaries["left"] + 8,
-            self.monitor["top"] + y + self._boundaries["top"] + self.TITLE_BAR_HEIGHT,
+            self.monitor["left"] + x + self._boundaries["left"],
+            self.monitor["top"] + y + self._boundaries["top"],
         )
 
     def convert_region(self, region: tuple):

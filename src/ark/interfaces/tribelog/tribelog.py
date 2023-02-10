@@ -96,7 +96,7 @@ class TribeLog(ArkBot):
     def is_open(self) -> bool:
         """Checks if the tribelog is open."""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/tribe_log.png", region=(1300, 70, 230, 85), confidence=0.8
             )
             is not None

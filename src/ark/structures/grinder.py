@@ -1,9 +1,6 @@
 
-
-
-
-from ark.structures.structure import Structure
-from ark.exceptions import NoGasolineError
+from .structure import Structure
+from ..exceptions import NoGasolineError
 
 class Grinder(Structure):
     """Represents the grinder inventory in ark.
@@ -17,7 +14,7 @@ class Grinder(Structure):
     def can_turn_on(self) -> bool:
         """Checks if the grinder can be turned on"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/turn_on.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
@@ -29,7 +26,7 @@ class Grinder(Structure):
     def is_turned_on(self) -> bool:
         """Checks if the grinder is already turned on"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/turn_off.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
@@ -41,7 +38,7 @@ class Grinder(Structure):
     def can_grind(self) -> bool:
         """Checks if the grinder can grind"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/grind_all_items.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,

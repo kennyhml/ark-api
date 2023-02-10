@@ -4,7 +4,6 @@ The `Inventory` parent class contains methods that make it easy to derive other 
 """
 
 import math
-import os
 import time
 from typing import Literal, Optional
 
@@ -13,14 +12,16 @@ import pydirectinput as input  # type: ignore[import]
 import win32clipboard  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
-from ark.exceptions import (InventoryNotAccessibleError,
-                            InventoryNotClosableError,
-                            ReceivingRemoveInventoryTimeout)
-from ark.items.items import Item
-from bot.ark_bot import ArkBot
+from ..._ark import Ark
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    InventoryNotClosableError,
+    ReceivingRemoveInventoryTimeout,
+)
+from ...items import Item
 
 
-class Inventory(ArkBot):
+class Inventory(Ark):
     """Represents the ark inventory, inherits from `ArkBot`.
 
     Parameters:
@@ -53,7 +54,6 @@ class Inventory(ArkBot):
     CREATE_FOLDER = (1584, 187)
     FIRST_SLOT = (1292, 294)
     LAST_TRANSFER_ALL = time.time()
-
 
     def __init__(
         self, entity_name: str, action_wheel_img: str, max_slots: Optional[str] = None
@@ -101,27 +101,27 @@ class Inventory(ArkBot):
     def count_item(self, item: Item) -> int:
         """Returns the amount of stacks of the given item located within the inventory."""
         return len(
-            self.locate_all_template(
+            self.window.locate_all_template(
                 item.inventory_icon, region=self.ITEM_REGION, confidence=0.8
             )
         )
 
     def find_item(self, item: Item) -> tuple | None:
         """Returns the position of the given item within the inventory."""
-        return self.locate_template(
+        return self.window.locate_template(
             item.inventory_icon, region=self.ITEM_REGION, confidence=0.8
         )
 
     def item_added(self) -> bool:
         """Checks if an item was added by matching for the added template"""
-        return self.locate_template(
+        return self.window.locate_template(
             f"templates/added.png", region=self.ADDED_REGION, confidence=0.7
         )
 
     def is_open(self) -> bool:
         """Checks if the inventory is open."""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/inventory.png", region=self.INVENTORY_REGION, confidence=0.8
             )
             is not None
@@ -140,7 +140,7 @@ class Inventory(ArkBot):
         Returns whether the item is in the inventory or not.
         """
         return (
-            self.locate_template(
+            self.window.locate_template(
                 item.inventory_icon,
                 region=self.ITEM_REGION,
                 confidence=0.8,
@@ -151,8 +151,6 @@ class Inventory(ArkBot):
 
     def search_for(self, item: Item | str) -> None:
         """Searches for a term in the target inventory using pyautogui typewrite"""
-        self.check_status()
-
         # write the name into the search bar
         if isinstance(item, str):
             self.click_search()
@@ -217,8 +215,8 @@ class Inventory(ArkBot):
         """Attempts to OCR the amount of slots occupied in the structure.
         Returns 0 upon failure.
         """
-        slots = self.grab_screen((1090, 503, 41, 15))
-        masked = self.denoise_text(
+        slots = self.window.grab_screen((1090, 503, 41, 15))
+        masked = self.window.denoise_text(
             slots, (251, 227, 124), variance=30, upscale=True, upscale_by=3
         )
         result = tes.image_to_string(
@@ -242,7 +240,7 @@ class Inventory(ArkBot):
         options = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH"]
         for _ in range(3):
             for index, option in enumerate(options, start=1):
-                if self.locate_template(
+                if self.window.locate_template(
                     f"templates/folder_{option}.png",
                     region=(1240, 290, 55, 34),
                     confidence=0.9,
@@ -275,7 +273,7 @@ class Inventory(ArkBot):
                 f"You need to define a 'max_slot_img' for '{self._name}' in order to use this method."
             )
         return (
-            self.locate_template(
+            self.window.locate_template(
                 self._max_slots_img, region=(1074, 500, 60, 23), confidence=0.9
             )
             is not None
@@ -284,7 +282,7 @@ class Inventory(ArkBot):
     def receiving_remote_inventory(self) -> bool:
         """Checks if the 'Receiving Remote Inventory' text is visible."""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/remote_inventory.png",
                 region=(1346, 563, 345, 43),
                 confidence=0.8,
@@ -294,11 +292,11 @@ class Inventory(ArkBot):
 
     def get_transferred_frame(
         self, item: Item, mode: Literal["rm", "add"] = "rm"
-    ) -> tuple | None:
+    ) -> tuple[int, int, int, int] | None:
         if not item.added_icon:
             raise Exception
 
-        ytrap_position = self.locate_template(
+        ytrap_position = self.window.locate_template(
             item.added_icon, region=(0, 970, 160, 350), confidence=0.7
         )
 
@@ -308,17 +306,21 @@ class Inventory(ArkBot):
         # get our region of interest
         text_start_x = ytrap_position[0] + ytrap_position[2]
         if mode == "rm":
-            text_end = text_start_x + self.convert_width(130), ytrap_position[1]
+            text_end = text_start_x + self.window.convert_width(130), ytrap_position[1]
         else:
-            text_end = text_start_x + self.convert_width(95), ytrap_position[1]
+            text_end = text_start_x + self.window.convert_width(95), ytrap_position[1]
 
-        roi = (*text_end, self.convert_width(290), self.convert_height(25))
+        roi = (
+            *text_end,
+            self.window.convert_width(290),
+            self.window.convert_height(25),
+        )
 
         if not item.added_text:
             raise Exception(f"You did not define an 'added_text' for {item}!")
 
         # find the items name to crop out the numbers
-        name_text = self.locate_template(
+        name_text = self.window.locate_template(
             item.added_text, region=roi, confidence=0.7, convert=False
         )
         if not name_text:
@@ -327,8 +329,8 @@ class Inventory(ArkBot):
         # get our region of interest (from end of "Removed:" to start of "Element")
         roi = (
             *text_end,
-            self.convert_width(int(name_text[0] - text_end[0])),
-            self.convert_height(25),
+            self.window.convert_width(int(name_text[0] - text_end[0])),
+            self.window.convert_height(25),
         )
         return roi
 
@@ -347,8 +349,8 @@ class Inventory(ArkBot):
         if not roi:
             return 0
 
-        img = self.grab_screen(roi, convert=False)
-        img = self.denoise_text(
+        img = self.window.grab_screen(roi, convert=False)
+        img = self.window.denoise_text(
             img, denoise_rgb=(255, 255, 255), variance=10, upscale=True, upscale_by=3
         )
         # get the raw tesseract result
@@ -427,7 +429,7 @@ class Inventory(ArkBot):
         with pg.hold("e"):
             self.sleep(1)
             return (
-                self.locate_template(
+                self.window.locate_template(
                     f"templates/{self._action_wheel_img}.png",
                     region=(840, 425, 240, 230),
                     confidence=0.7,
@@ -509,6 +511,8 @@ class Inventory(ArkBot):
         self.search_for(item)
         self.sleep(0.5)
         return (
-            self.locate_template(item.inventory_icon, self.ITEM_REGION, confidence=0.75)
+            self.window.locate_template(
+                item.inventory_icon, self.ITEM_REGION, confidence=0.75
+            )
             is not None
         )

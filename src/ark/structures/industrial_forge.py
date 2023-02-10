@@ -1,8 +1,6 @@
 
-
-
-from ark.structures.structure import Structure
-from ark.exceptions import NoGasolineError
+from .structure import Structure
+from ..exceptions import NoGasolineError
 
 class IndustrialForge(Structure):
     """Represents the Industrial Forge inventory in ark.
@@ -16,7 +14,7 @@ class IndustrialForge(Structure):
     def can_turn_on(self) -> bool:
         """Checks if the Industrial Forge can be turned on"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/turn_on.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
@@ -28,7 +26,7 @@ class IndustrialForge(Structure):
     def is_turned_on(self) -> bool:
         """Checks if the Industrial Forge is already turned on"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/turn_off.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,

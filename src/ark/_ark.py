@@ -5,7 +5,7 @@ import pyautogui as pg  # type: ignore[import]
 from pynput.mouse import Button, Controller  # type: ignore[import]
 
 from ._tools import state_checker
-from .keybinds import Keybinds
+from ._keybinds import Keybinds
 from .window import ArkWindow
 
 
@@ -34,7 +34,7 @@ class Ark:
         self,
         x: Optional[int | tuple] = None,
         y: Optional[int | tuple] = None,
-        convert: bool = True
+        convert: bool = True,
     ) -> None:
         """Moves to the given position, scales passed coordinates by default.
         Parameters
@@ -77,3 +77,18 @@ class Ark:
         self.sleep(delay)
         pg.click()
         self.sleep(delay)
+
+    def click_at(self, x=None, y=None, button: str = "left", delay: float = 0.1):
+        """Moves to a given location and clicks with the mouse.
+        Parameters:
+        ----------
+        pos: :class:`tuple`
+            The (x,y) coordinates of the point
+        button: :class:`str`
+            The button to press
+        """
+        x, y = pg._normalizeXYArgs(x, y)
+        self.move_to(x, y)
+        self.sleep(delay)
+        pg.click(button=button)
+        self.sleep(0.1)

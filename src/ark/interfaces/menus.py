@@ -12,7 +12,7 @@ class MainMenu(ArkBot):
     def is_open(self) -> bool:
         """Checks if the main menu is currently open."""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/main_menu_options.png",
                 region=(20, 600, 230, 76),
                 confidence=0.8,
@@ -23,7 +23,7 @@ class MainMenu(ArkBot):
     def player_disconnected(self) -> bool:
         """Checks if the player was disconnected."""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/main_menu_accept.png",
                 region=(515, 320, 910, 390),
                 confidence=0.8,
@@ -47,7 +47,7 @@ class SessionList(ArkBot):
     def is_open(self) -> bool:
         """Checks if the session list menu is open"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/session_list.png",
                 region=(110, 100, 230, 80),
                 confidence=0.8,
@@ -58,7 +58,7 @@ class SessionList(ArkBot):
     def server_found(self) -> bool:
         """Checks if the favorited server has been found"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/server_favorite.png",
                 region=(90, 200, 430, 90),
                 confidence=0.75,
@@ -138,7 +138,7 @@ class IngameMenu(ArkBot):
     def is_open(self) -> bool:
         """Checks if the menu is open."""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/resume.png", region=(750, 215, 425, 200), confidence=0.8
             )
             is not None

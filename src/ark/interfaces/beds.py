@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import pyautogui as pg # type: ignore[import]
 import pydirectinput as input # type: ignore[import]
 
-from ark.buffs.buffs import pod_xp
+from ark.buffs.buff import pod_xp
 from ark.exceptions import BedNotAccessibleError, PlayerDidntTravelError
 from ark.entities.player import Player
 from ark.server.server import Server
@@ -49,7 +49,7 @@ class BedMap(ArkBot):
 
     def can_be_accessed(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/fast_travel.png", region=(0, 0, 1920, 1080), confidence=0.7
             )
             is not None
@@ -58,7 +58,7 @@ class BedMap(ArkBot):
     def is_open(self) -> bool:
         """Checks if the Bed menu is open"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/bed_filter.png", region=(140, 950, 150, 50), confidence=0.8
             )
             is not None
@@ -139,7 +139,7 @@ class BedMap(ArkBot):
 
     def can_enter(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 f"templates/bed.png",
                 region=(840, 425, 240, 230),
                 confidence=0.7,

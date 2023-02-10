@@ -1,10 +1,9 @@
-from bot.ark_bot import ArkBot
-from ark.inventories.inventory import Inventory
+from ..._ark import Ark
+from ...exceptions import DinoNotMountedError
+from ...interfaces import Inventory
 
-from ark.exceptions import DinoNotMountedError
 
-
-class Dinosaur(ArkBot):
+class Dinosaur(Ark):
     def __init__(self, entity_name, action_wheel_img) -> None:
         super().__init__()
         self.name = entity_name
@@ -12,7 +11,7 @@ class Dinosaur(ArkBot):
 
     def is_mounted(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/stamina_mount.png",
                 region=(1880, 53, 31, 44),
                 confidence=0.6,
@@ -22,7 +21,7 @@ class Dinosaur(ArkBot):
 
     def can_ride(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/ride.png",
                 region=(0, 0, 1920, 1080),
                 confidence=0.7,
@@ -32,7 +31,7 @@ class Dinosaur(ArkBot):
 
     def can_access(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/access_inventory.png",
                 region=(0, 0, 1920, 1080),
                 confidence=0.7,

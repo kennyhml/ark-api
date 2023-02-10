@@ -3,7 +3,7 @@ import numpy as np
 import pyautogui  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
-from ark.entities.dinosaurs import Dinosaur
+from .dinosaur import Dinosaur
 
 
 class Stryder(Dinosaur):
@@ -21,8 +21,8 @@ class Stryder(Dinosaur):
         Returns the coordinate of the transfer tab as a tuple, or None if not found.
         """
         # grab action wheel region, denoise for orange text
-        img = self.grab_screen((470, 80, 980, 900), path="temp/test.png")
-        mask = self.denoise_text(img, (39, 146, 255), 15)
+        img = self.window.grab_screen((470, 80, 980, 900), path="temp/test.png")
+        mask = self.window.denoise_text(img, (39, 146, 255), 15)
 
         # get the first orange matching pixel
         matches = cv.findNonZero(mask)
@@ -35,7 +35,6 @@ class Stryder(Dinosaur):
         """Opens the dedi transfer action wheel."""
         # find position of the wheel option
         pos = self.find_dedi_transfer_tab()
-        print(pos)
         if not pos:
             raise Exception
 

@@ -3,8 +3,8 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ark.exceptions import NoItemsDepositedError
 from ark.inventories.dedi_inventory import DedicatedStorageInventory
-from ark.items.items import Item
-from ark.structures.structure import Structure
+from ..items import Item
+from .structure import Structure
 
 
 class TekDedicatedStorage(Structure):
@@ -18,7 +18,7 @@ class TekDedicatedStorage(Structure):
         
     def can_deposit(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/deposit_all.png", region=(0, 0, 1920, 1080), confidence=0.7
             )
             is not None
@@ -26,7 +26,7 @@ class TekDedicatedStorage(Structure):
 
     def deposited_items(self) -> bool:
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/items_deposited.png",
                 region=(710, 4, 460, 130),
                 confidence=0.75,
@@ -39,7 +39,7 @@ class TekDedicatedStorage(Structure):
         if not item.added_icon:
             raise Exception(f"You did not define an 'added_icon' for {item}!")
 
-        return self.locate_template(
+        return self.window.locate_template(
             item.added_icon, region=(0, 430, 160, 350), confidence=0.7
         )
 
@@ -127,7 +127,7 @@ class TekDedicatedStorage(Structure):
             raise Exception(f"You did not define an 'added_text' for {item}!")
 
         # find the items name to crop out the numbers
-        name_text = self.locate_template(
+        name_text = self.window.locate_template(
             item.added_text, region=roi, confidence=0.7, convert=False
         )
 

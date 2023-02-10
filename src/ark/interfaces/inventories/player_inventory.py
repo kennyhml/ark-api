@@ -6,16 +6,16 @@ from typing import Optional
 
 import pyautogui as pg  # type: ignore[import]
 
-from ark.exceptions import InventoryNotAccessibleError, NoItemsAddedError
-from ark.inventories.inventory import Inventory
-from ark.items.items import Item
+from ...exceptions import InventoryNotAccessibleError, NoItemsAddedError
+from ...items import Item
+from .inventory import Inventory
 
 
 class PlayerInventory(Inventory):
     """Represents the player inventory in ark.
 
-    Handles player inventory related actions such as transferring items,
-    dropping all items and opening crystals.
+    Provides the ability to implement player inventory related actions
+    such as transferring items to other inventories.
 
     Inherits from the `Inventory` class.
     """
@@ -140,7 +140,7 @@ class PlayerInventory(Inventory):
         """Checks if there are any pellets left to even transfer,
         we wouldnt wanna waste time clicking empty slots RIGHT @SLEEPY!!?"""
         return (
-            self.locate_template(
+            self.window.locate_template(
                 "templates/inventory_pellet.png",
                 region=(116, 700, 95, 90),
                 confidence=0.8,
