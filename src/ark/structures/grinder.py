@@ -15,7 +15,7 @@ class Grinder(Structure):
         """Checks if the grinder can be turned on"""
         return (
             self.window.locate_template(
-                "templates/turn_on.png",
+                "ark/templates/turn_on.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
                 grayscale=True,
@@ -27,7 +27,7 @@ class Grinder(Structure):
         """Checks if the grinder is already turned on"""
         return (
             self.window.locate_template(
-                "templates/turn_off.png",
+                "ark/templates/turn_off.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
                 grayscale=True,
@@ -39,7 +39,7 @@ class Grinder(Structure):
         """Checks if the grinder can grind"""
         return (
             self.window.locate_template(
-                "templates/grind_all_items.png",
+                "ark/templates/grind_all_items.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
             )

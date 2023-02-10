@@ -14,7 +14,7 @@ class ChemistryBench(Structure):
         """Checks if the chembench can be turned on"""
         return (
             self.window.locate_template(
-                "templates/turn_on.png",
+                "ark/templates/turn_on.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
                 grayscale=True,
@@ -26,7 +26,7 @@ class ChemistryBench(Structure):
         """Checks if the chembench is already turned on"""
         return (
             self.window.locate_template(
-                "templates/turn_off.png",
+                "ark/templates/turn_off.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
                 grayscale=True,

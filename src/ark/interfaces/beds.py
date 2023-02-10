@@ -49,7 +49,7 @@ class BedMap(Ark):
     def can_be_accessed(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/fast_travel.png", region=(0, 0, 1920, 1080), confidence=0.7
+                "ark/templates/fast_travel.png", region=(0, 0, 1920, 1080), confidence=0.7
             )
             is not None
         )
@@ -58,7 +58,7 @@ class BedMap(Ark):
         """Checks if the Bed menu is open"""
         return (
             self.window.locate_template(
-                "templates/bed_filter.png", region=(140, 950, 150, 50), confidence=0.8
+                "ark/templates/bed_filter.png", region=(140, 950, 150, 50), confidence=0.8
             )
             is not None
         )
@@ -137,7 +137,7 @@ class BedMap(Ark):
     def can_enter(self) -> bool:
         return (
             self.window.locate_template(
-                f"templates/bed.png",
+                f"ark/templates/bed.png",
                 region=(840, 425, 240, 230),
                 confidence=0.7,
             )
@@ -177,7 +177,7 @@ class TekPod(Bed):
     def can_enter(self) -> bool:
         return (
             self.player.window.locate_template(
-                f"templates/pod.png",
+                f"ark/templates/pod.png",
                 region=(840, 425, 240, 230),
                 confidence=0.7,
             )

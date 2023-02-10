@@ -15,7 +15,7 @@ class IndustrialForge(Structure):
         """Checks if the Industrial Forge can be turned on"""
         return (
             self.window.locate_template(
-                "templates/turn_on.png",
+                "ark/templates/turn_on.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
                 grayscale=True,
@@ -27,7 +27,7 @@ class IndustrialForge(Structure):
         """Checks if the Industrial Forge is already turned on"""
         return (
             self.window.locate_template(
-                "templates/turn_off.png",
+                "ark/templates/turn_off.png",
                 region=(740, 570, 444, 140),
                 confidence=0.85,
                 grayscale=True,

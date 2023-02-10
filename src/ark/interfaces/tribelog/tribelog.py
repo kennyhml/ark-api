@@ -88,7 +88,7 @@ class TribeLog(Ark):
         """Checks if the tribelog is open."""
         return (
             self.window.locate_template(
-                "templates/tribe_log.png", region=(1300, 70, 230, 85), confidence=0.8
+                "ark/templates/tribe_log.png", region=(1300, 70, 230, 85), confidence=0.8
             )
             is not None
         )
@@ -304,7 +304,7 @@ class TribeLog(Ark):
         img = img.crop(box=(0, 0, 50, img.height))
 
         return self.window.locate_all_in_image(
-            "templates/tribelog_day.png", img, confidence=0.8
+            "ark/templates/tribelog_day.png", img, confidence=0.8
         )
 
     def get_daytime(self, image: str | Image.Image | ScreenShot) -> str | None:
@@ -435,7 +435,7 @@ class TribeLog(Ark):
         try:
             # filter out auto-decay
             if self.window.locate_in_image(
-                "templates/tribelog_auto_decay.png", image, confidence=0.8
+                "ark/templates/tribelog_auto_decay.png", image, confidence=0.8
             ):
                 return None
 
@@ -477,12 +477,12 @@ class TribeLog(Ark):
         A string representing the tek sensor event in the passed image.
         """
         if self.window.locate_in_image(
-            "templates/tribelog_enemy_survivor.png", image, confidence=0.75
+            "ark/templates/tribelog_enemy_survivor.png", image, confidence=0.75
         ):
             return "an enemy survivor"
 
         if self.window.locate_in_image(
-            "templates/tribelog_enemy_dino.png", image, confidence=0.75
+            "ark/templates/tribelog_enemy_dino.png", image, confidence=0.75
         ):
             return "an enemy dinosaur"
         # not determined

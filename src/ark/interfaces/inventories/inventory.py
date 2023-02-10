@@ -115,14 +115,14 @@ class Inventory(Ark):
     def item_added(self) -> bool:
         """Checks if an item was added by matching for the added template"""
         return self.window.locate_template(
-            f"templates/added.png", region=self.ADDED_REGION, confidence=0.7
+            f"ark/templates/added.png", region=self.ADDED_REGION, confidence=0.7
         )
 
     def is_open(self) -> bool:
         """Checks if the inventory is open."""
         return (
             self.window.locate_template(
-                "templates/inventory.png", region=self.INVENTORY_REGION, confidence=0.8
+                "ark/templates/inventory.png", region=self.INVENTORY_REGION, confidence=0.8
             )
             is not None
         )
@@ -241,7 +241,7 @@ class Inventory(Ark):
         for _ in range(3):
             for index, option in enumerate(options, start=1):
                 if self.window.locate_template(
-                    f"templates/folder_{option}.png",
+                    f"ark/templates/folder_{option}.png",
                     region=(1240, 290, 55, 34),
                     confidence=0.9,
                 ):
@@ -283,7 +283,7 @@ class Inventory(Ark):
         """Checks if the 'Receiving Remote Inventory' text is visible."""
         return (
             self.window.locate_template(
-                "templates/remote_inventory.png",
+                "ark/templates/remote_inventory.png",
                 region=(1346, 563, 345, 43),
                 confidence=0.8,
             )
@@ -430,7 +430,7 @@ class Inventory(Ark):
             self.sleep(1)
             return (
                 self.window.locate_template(
-                    f"templates/{self._action_wheel_img}.png",
+                    f"ark/templates/{self._action_wheel_img}.png",
                     region=(840, 425, 240, 230),
                     confidence=0.7,
                 )

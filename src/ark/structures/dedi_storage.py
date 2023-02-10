@@ -18,7 +18,7 @@ class TekDedicatedStorage(Structure):
     def can_deposit(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/deposit_all.png", region=(0, 0, 1920, 1080), confidence=0.7
+                "ark/templates/deposit_all.png", region=(0, 0, 1920, 1080), confidence=0.7
             )
             is not None
         )
@@ -26,7 +26,7 @@ class TekDedicatedStorage(Structure):
     def deposited_items(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/items_deposited.png",
+                "ark/templates/items_deposited.png",
                 region=(710, 4, 460, 130),
                 confidence=0.75,
             )

@@ -55,7 +55,7 @@ class Player(Ark):
     def has_died(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/you_died.png", region=(630, 10, 590, 80), confidence=0.7
+                "ark/templates/you_died.png", region=(630, 10, 590, 80), confidence=0.7
             )
             is not None
         )
@@ -111,7 +111,7 @@ class Player(Ark):
         """Checks if the player is spawned"""
         return (
             self.window.locate_template(
-                "templates/stamina.png", region=(1850, 955, 70, 65), confidence=0.65
+                "ark/templates/stamina.png", region=(1850, 955, 70, 65), confidence=0.65
             )
             is not None
         )
@@ -488,7 +488,7 @@ class Player(Ark):
     def item_added(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/added.png", region=(0, 450, 314, 240), confidence=0.75
+                "ark/templates/added.png", region=(0, 450, 314, 240), confidence=0.75
             )
             is not None
         )

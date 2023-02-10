@@ -12,7 +12,7 @@ class Dinosaur(Ark):
     def is_mounted(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/stamina_mount.png",
+                "ark/templates/stamina_mount.png",
                 region=(1880, 53, 31, 44),
                 confidence=0.6,
             )
@@ -22,7 +22,7 @@ class Dinosaur(Ark):
     def can_ride(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/ride.png",
+                "ark/templates/ride.png",
                 region=(0, 0, 1920, 1080),
                 confidence=0.7,
             )
@@ -32,7 +32,7 @@ class Dinosaur(Ark):
     def can_access(self) -> bool:
         return (
             self.window.locate_template(
-                "templates/access_inventory.png",
+                "ark/templates/access_inventory.png",
                 region=(0, 0, 1920, 1080),
                 confidence=0.7,
             )

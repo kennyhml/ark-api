@@ -110,11 +110,11 @@ CONTENTS_MAPPING = {
 # RGB to denoise with if the templates are located in the tribelog message
 DENOISE_MAPPING: dict[tuple[int, int, int], str | list] = {
     (255, 0, 0): [
-        "templates/tribelog_red_your.png",
-        "templates/tribelog_enemy_destroyed.png",
+        "ark/templates/tribelog_red_your.png",
+        "ark/templates/tribelog_enemy_destroyed.png",
     ],
-    (208, 3, 211): "templates/tribelog_purple_your.png",
-    (158, 76, 76): "templates/tribelog_sensor.png",
+    (208, 3, 211): "ark/templates/tribelog_purple_your.png",
+    (158, 76, 76): "ark/templates/tribelog_sensor.png",
 }
 
 # Denoise RGB indicating a certain tribelog event

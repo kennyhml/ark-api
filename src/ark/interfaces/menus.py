@@ -13,7 +13,7 @@ class MainMenu(Ark):
         """Checks if the main menu is currently open."""
         return (
             self.window.locate_template(
-                "templates/main_menu_options.png",
+                "ark/templates/main_menu_options.png",
                 region=(20, 600, 230, 76),
                 confidence=0.8,
             )
@@ -24,7 +24,7 @@ class MainMenu(Ark):
         """Checks if the player was disconnected."""
         return (
             self.window.locate_template(
-                "templates/main_menu_accept.png",
+                "ark/templates/main_menu_accept.png",
                 region=(515, 320, 910, 390),
                 confidence=0.8,
             )
@@ -48,7 +48,7 @@ class SessionList(Ark):
         """Checks if the session list menu is open"""
         return (
             self.window.locate_template(
-                "templates/session_list.png",
+                "ark/templates/session_list.png",
                 region=(110, 100, 230, 80),
                 confidence=0.8,
             )
@@ -59,7 +59,7 @@ class SessionList(Ark):
         """Checks if the favorited server has been found"""
         return (
             self.window.locate_template(
-                "templates/server_favorite.png",
+                "ark/templates/server_favorite.png",
                 region=(90, 200, 430, 90),
                 confidence=0.75,
             )
@@ -139,7 +139,7 @@ class IngameMenu(Ark):
         """Checks if the menu is open."""
         return (
             self.window.locate_template(
-                "templates/resume.png", region=(750, 215, 425, 200), confidence=0.8
+                "ark/templates/resume.png", region=(750, 215, 425, 200), confidence=0.8
             )
             is not None
         )
