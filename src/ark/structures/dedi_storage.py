@@ -2,11 +2,10 @@
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ark.exceptions import NoItemsDepositedError
-from ark.inventories.dedi_inventory import DedicatedStorageInventory
 from ..items import Item
 from .structure import Structure
 
-
+from ..interfaces.inventories import DedicatedStorageInventory
 class TekDedicatedStorage(Structure):
     """Represents the grinder inventory in ark.
 
@@ -120,8 +119,8 @@ class TekDedicatedStorage(Structure):
 
         # get our region of interest
         text_start_x = dust_pos[0] + dust_pos[2]
-        text_end = text_start_x + self.convert_width(130), dust_pos[1]
-        roi = (*text_end, self.convert_width(290), self.convert_height(25))
+        text_end = text_start_x + self.window.convert_width(130), dust_pos[1]
+        roi = (*text_end, self.window.convert_width(290), self.window.convert_height(25))
 
         if not item.added_text:
             raise Exception(f"You did not define an 'added_text' for {item}!")
@@ -138,13 +137,13 @@ class TekDedicatedStorage(Structure):
         # get our region of interest (from end of "Removed:" to start of "Element")
         roi = (
             *text_end,
-            self.convert_width(int(name_text[0] - text_end[0])),
-            self.convert_height(25),
+            self.window.convert_width(int(name_text[0] - text_end[0])),
+            self.window.convert_height(25),
         )
 
         # grab the region of interest and apply denoising
-        img = self.grab_screen(roi, convert=False)
-        img = self.denoise_text(img, denoise_rgb=(255, 255, 255), variance=5)
+        img = self.window.grab_screen(roi, convert=False)
+        img = self.window.denoise_text(img, denoise_rgb=(255, 255, 255), variance=5)
 
         raw_result = tes.image_to_string(
             img,

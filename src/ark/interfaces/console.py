@@ -1,13 +1,12 @@
 import pyautogui as pg  # type: ignore[import]
 
-from bot.ark_bot import ArkBot
+from .._ark import Ark
 
-
-class Console(ArkBot):
+class Console(Ark):
     def is_open(self):
         """Checks if the console is open by matching the black par"""
         return pg.pixelMatchesColor(
-            *self.convert_point(976, 1071), (0, 0, 0), tolerance=3
+            *self.window.convert_point(976, 1071), (0, 0, 0), tolerance=3
         )
 
     def open(self):

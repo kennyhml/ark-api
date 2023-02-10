@@ -1,18 +1,17 @@
 
 from __future__ import annotations
-from copy import deepcopy
 
+from copy import deepcopy
 from dataclasses import dataclass
 
-import pyautogui as pg # type: ignore[import]
-import pydirectinput as input # type: ignore[import]
+import pyautogui as pg  # type: ignore[import]
+import pydirectinput as input  # type: ignore[import]
 
-from ark.buffs.buff import pod_xp
-from ark.exceptions import BedNotAccessibleError, PlayerDidntTravelError
-from ark.entities.player import Player
-from ark.server.server import Server
-from bot.ark_bot import ArkBot
-from bot.unstucking import UnstuckHandler
+from .._ark import Ark
+from ..buffs import POD_XP
+from ..entities import Player
+from ..exceptions import BedNotAccessibleError, PlayerDidntTravelError
+from ..server import Server
 
 
 @dataclass
@@ -35,7 +34,7 @@ class Bed:
         new_bed.name = new_bed.name[:-2] + prefix + new_bed.name[-2:]
         return new_bed
 
-class BedMap(ArkBot):
+class BedMap(Ark):
     """Main Bed Travelling Handler
     -----------------------------
 
@@ -132,8 +131,6 @@ class BedMap(ArkBot):
                 return
 
             except PlayerDidntTravelError:
-                if not UnstuckHandler(Server("47", "s47", "Center")).attempt_fix():
-                    self.running = False
                 print("Unable to travel! Trying again...")
                 self.sleep(20)
 
@@ -179,7 +176,7 @@ class TekPod(Bed):
 
     def can_enter(self) -> bool:
         return (
-            self.player.locate_template(
+            self.player.window.locate_template(
                 f"templates/pod.png",
                 region=(840, 425, 240, 230),
                 confidence=0.7,
@@ -206,10 +203,10 @@ class TekPod(Bed):
         # 'use' only needs to be held if we hold for too long after clicking
         input.keyUp(self.player.keybinds.use)
         self.player.sleep(2)
-        return self.player.has_effect(pod_xp)
+        return self.player.has_effect(POD_XP)
 
     def leave(self) -> None:
-        while self.player.has_effect(pod_xp):
+        while self.player.has_effect(POD_XP):
             self.player.press(self.player.keybinds.use)
             self.player.sleep(3)
 

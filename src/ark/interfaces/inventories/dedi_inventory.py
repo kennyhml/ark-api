@@ -1,8 +1,7 @@
 """
 dedi inventory
 """
-from ark.inventories.inventory import Inventory
-
+from .inventory import Inventory
 
 class DedicatedStorageInventory(Inventory):
     """Represents the Dedicated Storage Box in ark.

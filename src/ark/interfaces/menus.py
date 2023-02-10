@@ -2,11 +2,11 @@ import pyautogui as pg # type: ignore[import]
 
 from ark.entities.player import Player
 from ark.server.server import Server
-from bot.ark_bot import ArkBot
+from .._ark import Ark
 from ark.exceptions import ServerNotFoundError
 
 
-class MainMenu(ArkBot):
+class MainMenu(Ark):
     """Represents the ark main menu."""
 
     def is_open(self) -> bool:
@@ -39,7 +39,7 @@ class MainMenu(ArkBot):
             self.sleep(2)
 
 
-class SessionList(ArkBot):
+class SessionList(Ark):
     """Represents the ark session list. Responsible for rejoining servers."""
 
     FILTERS = {"Official Servers": (369, 863), "Favorites": (373, 925)}
@@ -132,7 +132,7 @@ class SessionList(ArkBot):
         raise ServerNotFoundError(f"Failed to find {server.name}!")
 
 
-class IngameMenu(ArkBot):
+class IngameMenu(Ark):
     """Represents the ark ingame (escape) menu."""
 
     def is_open(self) -> bool:
