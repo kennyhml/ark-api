@@ -6,10 +6,10 @@ from typing import Optional
 import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
-from ark.buffs import Buff, broken_bones, hungry, thirsty
+from ark.buffs.buffs import Buff, broken_bones, hungry, thirsty
 from ark.exceptions import InventoryNotAccessibleError, PlayerDidntTravelError
 from ark.inventories import Inventory, PlayerInventory
-from ark.items import Y_TRAP, Item
+from ark.items.items import Y_TRAP, Item
 from ark.structures.structure import Structure
 from bot.ark_bot import ArkBot
 

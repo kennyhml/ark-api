@@ -8,7 +8,7 @@ import pyautogui as pg  # type: ignore[import]
 
 from ark.exceptions import InventoryNotAccessibleError, NoItemsAddedError
 from ark.inventories.inventory import Inventory
-from ark.items import Item
+from ark.items.items import Item
 
 
 class PlayerInventory(Inventory):

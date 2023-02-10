@@ -16,7 +16,7 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 from ark.exceptions import (InventoryNotAccessibleError,
                             InventoryNotClosableError,
                             ReceivingRemoveInventoryTimeout)
-from ark.items import Item
+from ark.items.items import Item
 from bot.ark_bot import ArkBot
 
 

@@ -7,10 +7,10 @@ from dataclasses import dataclass
 import pyautogui as pg # type: ignore[import]
 import pydirectinput as input # type: ignore[import]
 
-from ark.buffs import pod_xp
+from ark.buffs.buffs import pod_xp
 from ark.exceptions import BedNotAccessibleError, PlayerDidntTravelError
 from ark.entities.player import Player
-from ark.server import Server
+from ark.server.server import Server
 from bot.ark_bot import ArkBot
 from bot.unstucking import UnstuckHandler
 

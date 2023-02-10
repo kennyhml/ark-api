@@ -3,7 +3,7 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ark.exceptions import NoItemsDepositedError
 from ark.inventories.dedi_inventory import DedicatedStorageInventory
-from ark.items import Item
+from ark.items.items import Item
 from ark.structures.structure import Structure
 
 

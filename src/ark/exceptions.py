@@ -2,7 +2,7 @@
 A module containing all exceptions raised in the ark API classes,
 Sorted after situation
 """
-class BotTerminatedError(Exception):
+class TerminatedError(Exception):
     """Raised when the bot has been termined by user or critical error"""
 
 class InventoryNotAccessibleError(Exception):

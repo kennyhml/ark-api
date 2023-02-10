@@ -25,12 +25,10 @@ from screeninfo import get_monitors  # type: ignore[import]
 # set tesseract path
 tes.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-
 class ArkWindow:
     """ARK window handle
-    ---------------------
 
-    Contains the boundaries of the game and the monitor it is running on.\n
+    Contains the boundaries of the game and the monitor it is running on.
     Scales points, regions and images depending on the games resolution.
 
     Contains methods to grab screenshots, match templates and check if the game
@@ -52,23 +50,41 @@ class ArkWindow:
     TITLE_BAR_HEIGHT = 30
     
     def __init__(self) -> None:
-        self._window = self.get_window()
+        self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
         self._fullscreen = self.check_fullscreen()
+        
+    def __str__(self) -> str:
+        return (
+            f"Lost Ark window: {self._boundaries}\n"
+            f"Lost Ark Monitor: {self._monitor}\n"
+            f"Lost Ark fullscreen: {self._fullscreen}"
+        )
 
     @property
-    def window(self):
-        return self._window
+    def handle(self) -> int:
+        return self._handle._hWnd
 
     @property
-    def monitor(self):
+    def boundaries(self) -> dict:
+        return self._boundaries
+
+    @property
+    def monitor(self) -> dict:
         return self._monitor
 
     @property
-    def fullscreen(self):
+    def fullscreen(self) -> bool:
         return self._fullscreen
 
-    def grab_screen(self, region, path: str = "", convert: bool = True) -> str:
+    @property
+    def center(self) -> tuple[int, int]:
+        return (
+            self._boundaries["left"] + (self._boundaries["width"] // 2),
+            self._boundaries["top"] + (self._boundaries["height"] // 2),
+        )
+
+    def grab_screen(self, region: tuple[int, int, int, int], path: str = "", convert: bool = True) -> str:
         """Grabs a screenshot of the given region using mss and saves it
         at the specified path.
 
@@ -104,19 +120,21 @@ class ArkWindow:
                 return path
             return img
 
-    def get_window(self) -> dict:
+    def get_boundaries(self) -> dict:
         """Grab the ark window using pygetwindow and create the boundaries.
         If it fails to grab a window it will assume a 1920x1080 window.
         """
         try:
-            window = pygetwindow.getWindowsWithTitle("ARK: Survival Evolved")[0]
+            windows = pygetwindow.getWindowsWithTitle("ARK: Survival Evolved")
+            self._handle: pygetwindow.Win32Window = windows[0]
+            print(f"Ark window handle: {self._handle._hWnd}")
 
             # create a window dict for mss
             return {
-                "left": window.left,
-                "top": window.top,
-                "width": window.width,
-                "height": window.height,
+                "left": self._handle.left,
+                "top": self._handle.top,
+                "width": self._handle.width,
+                "height": self._handle.height,
             }
         except Exception as e:
             print(
@@ -124,15 +142,6 @@ class ArkWindow:
                 "Assuming a 1920x1080 windowed fullscreen game."
             )
             return {"left": 0, "top": 0, "width": 1920, "height": 1080}
-
-    def get_window_center(self) -> tuple:
-        """Gets the center of the window. Used to determine what monitor
-        the game is running on.
-        """
-        return (
-            self._window["left"] + (self._window["width"] // 2),
-            self._window["top"] + (self._window["height"] // 2),
-        )
 
     def get_monitor(self) -> dict:
         """Gets the monitor boundaries of the monitor ark is running on
@@ -142,7 +151,7 @@ class ArkWindow:
         ---------
         The boundaries of the monitor ARK is running on
         """
-        center = self.get_window_center()
+        center = self.center
 
         for m in get_monitors():
             # check x spacing
@@ -165,15 +174,15 @@ class ArkWindow:
             "Could not find then monitor ARK is running on!\n"
             "Assuming a 1920x1080 monitor."
         )
-        return self._window
+        return self._boundaries
 
-    def check_fullscreen(self):
+    def check_fullscreen(self) -> bool:
         """Checks if ARK is running in fullscreen by checking if the monitor
         dict matches the ARK boundaries.
         """
         return all(
             [
-                self._window[boundary] == self._monitor[boundary]
+                self._boundaries[boundary] == self._monitor[boundary]
                 for boundary in ["left", "top", "width", "height"]
             ]
         )
@@ -184,7 +193,7 @@ class ArkWindow:
 
     def update_boundaries(self):
         """Re-initializes the class to update the window"""
-        self._window = self.get_window()
+        self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
         self._fullscreen = self.check_fullscreen()
 
@@ -215,8 +224,8 @@ class ArkWindow:
             )
 
         return (
-            self.monitor["left"] + x + self._window["left"] + 8,
-            self.monitor["top"] + y + self._window["top"] + self.TITLE_BAR_HEIGHT,
+            self.monitor["left"] + x + self._boundaries["left"] + 8,
+            self.monitor["top"] + y + self._boundaries["top"] + self.TITLE_BAR_HEIGHT,
         )
 
     def convert_region(self, region: tuple):
@@ -390,31 +399,8 @@ class ArkWindow:
         kernel = np.ones((matrix_size, matrix_size), np.uint8)
         return cv.dilate(np.asarray(img), kernel, iterations=1)
 
-    def count_pixels(self, masked_img) -> int:
-        """Counts all non zero pixels in the given mask"""
-        try:
-            return len(cv.findNonZero(masked_img))
-        except TypeError:
-            return 0
 
-    def find_window(self, class_name, window_name=None):
-        """find a window by its class_name"""
-        self._handle = win32gui.FindWindow(class_name, window_name)
-
-    def _window_enum_callback(self, hwnd, wildcard):
-        """Pass to win32gui.EnumWindows() to check all the opened windows"""
-        if re.match(wildcard, str(win32gui.GetWindowText(hwnd))) is not None:
-            self._handle = hwnd
-
-    def find_window_wildcard(self, wildcard):
-        """find a window whose title matches the wildcard regex"""
-        self._handle = None
-        win32gui.EnumWindows(self._window_enum_callback, wildcard)
-
-    def set_foreground(self):
-        """put the window in the foreground"""
-        try:
-            self.find_window_wildcard(".*ARK: Survival Evolved.*")
-            win32gui.SetForegroundWindow(self._handle)
-        except Exception:
-            pass
+if __name__ == "__main__":
+    win = ArkWindow()
+    print(win)
+    pg.moveTo(win.boundaries["left"], win.boundaries["top"])
