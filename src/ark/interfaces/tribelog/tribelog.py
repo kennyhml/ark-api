@@ -4,7 +4,6 @@ Using tesseract OCR and discord webhooks to inform the user when getting raided.
 """
 
 import logging
-from dataclasses import dataclass
 from datetime import datetime
 from threading import Thread
 
@@ -16,8 +15,12 @@ from PIL import Image  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ark.exceptions import LogsNotOpenedError
-from .config import (CONTENTS_MAPPING, DAYTIME_MAPPING,
-                                 DENOISE_MAPPING, EVENT_MAPPING, INGORED_TERMS)
+
+from ..._ark import Ark
+from ...exceptions import LogsNotOpenedError
+from .config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
+                     EVENT_MAPPING, INGORED_TERMS)
+from .message import TribeLogMessage
 
 # configure logging file, helps debugging why certain stuff didnt get posted
 time = datetime.now()
@@ -30,19 +33,7 @@ logging.basicConfig(
 )
 
 
-@dataclass
-class TribeLogMessage:
-    """Represents a single message in the tribe log"""
-
-    day: str
-    action: str
-    content: str
-
-    def __repr__(self):
-        return f"{self.day} {self.action} {self.content}"
-
-
-class TribeLog(ArkBot):
+class TribeLog(Ark):
     """Represents the ark tribe log. Stores all previous logs as a
     list of `TribeLogMessages`.
 
@@ -89,7 +80,7 @@ class TribeLog(ArkBot):
         """
         logging.log(logging.INFO, "Updating tribelogs...")
         self.open()
-        self.grab_screen(self.LOG_REGION, "temp/tribelog.png")
+        self.window.grab_screen(self.LOG_REGION, "temp/tribelog.png")
         self.close()
         Thread(target=self.update_tribelogs, name="Updating tribelogs...").start()
 
@@ -256,13 +247,13 @@ class TribeLog(ArkBot):
         logging.log(logging.INFO, f"New messages added: {messages}!")
         self._tribe_log += reversed(messages)
         self.delete_old_logs()
-        self.send_to_discord(
-            self.log_webhook,
-            "Current tribelogs:",
-            file="temp/tribelog.png",
-            name="Ling Ling Logs",
-            avatar="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
-        )
+        # self.send_to_discord(
+        #     self.log_webhook,
+        #     "Current tribelogs:",
+        #     file="temp/tribelog.png",
+        #     name="Ling Ling Logs",
+        #     avatar="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
+        # )
         logging.log(logging.INFO, f"Updated tribelog: {self._tribe_log}")
 
     def send_alert(self, message: TribeLogMessage, multiple: bool = False) -> None:
@@ -312,7 +303,7 @@ class TribeLog(ArkBot):
         img = Image.open("temp/tribelog.png")
         img = img.crop(box=(0, 0, 50, img.height))
 
-        return self.locate_all_in_image(
+        return self.window.locate_all_in_image(
             "templates/tribelog_day.png", img, confidence=0.8
         )
 
@@ -331,7 +322,7 @@ class TribeLog(ArkBot):
             The daytime to be seen in the image or `None` if it is invalid / undetermined.
         """
         # prepare the image, denoising upscaling dilating etc...
-        prepared = self.denoise_text(
+        prepared = self.window.denoise_text(
             image, denoise_rgb=(180, 180, 180), variance=18, upscale=True, upscale_by=2
         )
 
@@ -382,7 +373,7 @@ class TribeLog(ArkBot):
 
         # prepare the image for tesseract, the purple RGB needs higher variance
         # than the others. Dilating seems to give accurate results in this case.
-        prepared_img = self.denoise_text(
+        prepared_img = self.window.denoise_text(
             image,
             denoise_rgb,
             30 if not denoise_rgb == (208, 3, 211) else 50,
@@ -443,7 +434,7 @@ class TribeLog(ArkBot):
             image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
         try:
             # filter out auto-decay
-            if self.locate_in_image(
+            if self.window.locate_in_image(
                 "templates/tribelog_auto_decay.png", image, confidence=0.8
             ):
                 return None
@@ -455,7 +446,7 @@ class TribeLog(ArkBot):
                 # only 1 template to match
                 if not isinstance(template, list):
                     if (
-                        self.locate_in_image(template, image, confidence=0.8)
+                        self.window.locate_in_image(template, image, confidence=0.8)
                         is not None
                     ):
                         return rgb
@@ -463,7 +454,7 @@ class TribeLog(ArkBot):
 
                 # multiple templates to match, check if any match
                 if any(
-                    self.locate_in_image(template, image, confidence=0.8) is not None
+                    self.window.locate_in_image(template, image, confidence=0.8) is not None
                     for template in DENOISE_MAPPING[rgb]
                 ):
                     return rgb
@@ -485,12 +476,12 @@ class TribeLog(ArkBot):
         ------------
         A string representing the tek sensor event in the passed image.
         """
-        if self.locate_in_image(
+        if self.window.locate_in_image(
             "templates/tribelog_enemy_survivor.png", image, confidence=0.75
         ):
             return "an enemy survivor"
 
-        if self.locate_in_image(
+        if self.window.locate_in_image(
             "templates/tribelog_enemy_dino.png", image, confidence=0.75
         ):
             return "an enemy dinosaur"
