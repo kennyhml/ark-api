@@ -9,6 +9,8 @@ in.
 Note that the ark window class expects points and templates to be taken on 1920x1080
 resolution.
 """
+import os
+from typing import Literal, Optional, overload
 
 import cv2 as cv  # type: ignore[import]
 import numpy as np
@@ -20,8 +22,12 @@ from PIL import Image, ImageOps
 from pytesseract import pytesseract as tes  # type: ignore[import]
 from screeninfo import get_monitors  # type: ignore[import]
 
+from ._tools import get_center
+
 # set tesseract path
 tes.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+PKG_PATH = os.path.dirname(__file__) + "\\"
+
 
 class ArkWindow:
     """ARK window handle
@@ -52,7 +58,8 @@ class ArkWindow:
         self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
         self._fullscreen = self.check_fullscreen()
-        
+        print(self)
+
     def __str__(self) -> str:
         return (
             f"Lost Ark window: {self._boundaries}\n"
@@ -83,7 +90,9 @@ class ArkWindow:
             self._boundaries["top"] + (self._boundaries["height"] // 2),
         )
 
-    def grab_screen(self, region: tuple[int, int, int, int], path: str = "", convert: bool = True) -> str:
+    def grab_screen(
+        self, region: tuple[int, int, int, int], path: str = "", convert: bool = True
+    ) -> str:
         """Grabs a screenshot of the given region using mss and saves it
         at the specified path.
 
@@ -130,8 +139,8 @@ class ArkWindow:
 
             # create a window dict for mss
             return {
-                "left": self._handle.left + self._CORRECT_X,
-                "top": self._handle.top + self._CORRECT_Y,
+                "left": self._handle.left + self._CORRECT_X if self._handle.left else 0,
+                "top": self._handle.top + self._CORRECT_Y if self._handle.top else 0,
                 "width": self._handle.width,
                 "height": self._handle.height,
             }
@@ -262,7 +271,9 @@ class ArkWindow:
         self, template: str, image, confidence: float, grayscale: bool = False
     ):
         """Finds the location of the given image in the given template."""
-        return pg.locate(template, image, confidence=confidence, grayscale=grayscale)
+        return pg.locate(
+            PKG_PATH + template, image, confidence=confidence, grayscale=grayscale
+        )
 
     def locate_all_in_image(
         self, template: str, image, confidence: float, grayscale: bool = False
@@ -271,7 +282,10 @@ class ArkWindow:
         return self.filter_points(
             set(
                 pg.locateAll(
-                    template, image, confidence=confidence, grayscale=grayscale
+                    PKG_PATH + template,
+                    image,
+                    confidence=confidence,
+                    grayscale=grayscale,
                 )
             ),
             min_dist=15,
@@ -280,30 +294,62 @@ class ArkWindow:
     def locate_template(
         self,
         template: str,
-        region: tuple,
+        region: tuple[int, int, int, int],
         confidence: float,
-        convert: bool = True,
         grayscale: bool = False,
-    ):
-        """Finds the given template on the screen."""
+        convert: bool = True,
+        center: bool = False,
+    ) -> tuple[int, int, int, int] | tuple[int, int] | None:
+        """Returns the locations of an image on the screen.
 
+        Parameters
+        ----------
+        template :class:`str` | `Image.Image` | `Mat`:
+            The template to find
+
+        image :class:`str` | `Image.Image` | `Mat`:
+            The image to find the template in
+
+        confidence :class:`float`:
+            How restrictive to be in whats considered a match
+
+        grayscale :class:`bool`: [optional]
+            Whehether to grayscale the template, default False
+
+        convert :class:`bool`: [optional]
+            Whehether to convert the template, default True
+
+        center :class:`bool`: [optional]
+            Whehether to get the matches center, default False
+
+        Returns
+        -------
+        :class:`tuple[int, int]` | `tuple[int, int, int, int]:
+            A tuple with the match either as centers or box
+        """
         if convert:
             region = self.convert_region(region)
-
+        template = PKG_PATH + template
         haystack: np.ndarray = np.asarray(self.grab_screen(region, convert=False))  # type: ignore[arg-type]
         image_rgb = cv.cvtColor(haystack, cv.COLOR_BGR2RGB)
         img = Image.fromarray(image_rgb)
-        return pg.locate(
+        box = pg.locate(
             self.convert_image(template) if convert else template,
             img,
             confidence=confidence,
             grayscale=grayscale,
         )
+        if not box:
+            return None
+
+        box = (box[0] + region[0], box[1] + region[1], box[2], box[3])
+        return get_center(box) if box and center else box
 
     def locate_all_template(
         self, template: str, region: tuple, confidence: float, convert: bool = True
     ):
         """Finds all locations of the given template on the screen."""
+        template = PKG_PATH + template
         return self.filter_points(
             set(
                 pg.locateAllOnScreen(
@@ -388,18 +434,10 @@ class ArkWindow:
 
         if upscale:
             img = Image.fromarray(img)
-            img = img.resize(
-                (img.size[0] * upscale_by, img.size[1] * upscale_by), 1
-            )
+            img = img.resize((img.size[0] * upscale_by, img.size[1] * upscale_by), 1)
 
         matrix_size = 2 if not upscale else 3
 
         # Taking a matrix of size 5 as the kernel
         kernel = np.ones((matrix_size, matrix_size), np.uint8)
         return cv.dilate(np.asarray(img), kernel, iterations=1)
-
-
-if __name__ == "__main__":
-    win = ArkWindow()
-    print(win)
-    pg.moveTo(win.boundaries["left"], win.boundaries["top"])

@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 
@@ -22,4 +23,6 @@ class Item:
         for path in (self.inventory_icon, self.added_icon, self.added_text):
             if path is None:
                 continue
-            assert os.path.exists(path), f"Path not found: {path}"
+            
+            abs_path = os.path.join(str(Path(__file__).parent.parent), path)
+            assert os.path.exists(abs_path), f"Path not found: {path}"

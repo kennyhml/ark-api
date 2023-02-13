@@ -1,76 +1,110 @@
+from typing import Literal, overload
 
-from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ark.exceptions import NoItemsDepositedError
+
+from ..interfaces.inventories import DedicatedStorageInventory
 from ..items import Item
 from .structure import Structure
 
-from ..interfaces.inventories import DedicatedStorageInventory
+
 class TekDedicatedStorage(Structure):
     """Represents the grinder inventory in ark.
 
     Is able to be turned on and off and grind all.
     """
+
+    TRANSFERRED_REGION = (710, 4, 460, 130)
+    ITEM_ADDED_REGION = (0, 430, 160, 350)
+
     def __init__(self) -> None:
-        super().__init__("Tek Dedicated Storage", "dedi")
-        self.inventory: DedicatedStorageInventory = DedicatedStorageInventory()
-        
-    def can_deposit(self) -> bool:
-        return (
-            self.window.locate_template(
-                "ark/templates/deposit_all.png", region=(0, 0, 1920, 1080), confidence=0.7
-            )
-            is not None
-        )
+        super().__init__("Tek Dedicated Storage", "dedi", DedicatedStorageInventory())
 
-    def deposited_items(self) -> bool:
-        return (
-            self.window.locate_template(
-                "ark/templates/items_deposited.png",
-                region=(710, 4, 460, 130),
-                confidence=0.75,
-            )
-            is not None
-        )
+    @overload
+    def deposit(self, items: list[Item], get_amount: Literal[False]) -> None:
+        ...
 
-    def item_deposited(self, item: Item) -> tuple:
-        """Checks if the given item has been deposited"""
-        if not item.added_icon:
-            raise Exception(f"You did not define an 'added_icon' for {item}!")
+    @overload
+    def deposit(self, items: list[Item], get_amount: Literal[True]) -> tuple[Item, int]:
+        ...
 
-        return self.window.locate_template(
-            item.added_icon, region=(0, 430, 160, 350), confidence=0.7
-        )
-
-    def attempt_deposit(
-        self, items: list[Item] | Item, determine_amount: bool = True
-    ) -> tuple[Item, int] | None:
+    def deposit(self, items: list[Item], get_amount: bool) -> tuple[Item, int] | None:
         """Attempts to deposit into a dedi until the 'x items deposited.'
         green message appears up top where x can be any number.
 
         Parameters:
         -----------
         items :class:`list`:
-            A list of items where each item is a potentionally deposited item
-
+            A list of items where each item is a possibly deposited item
 
         Returns:
         -----------
-        item :class:`str`:
+        item :class:`str`: [Optional]
             The name of the item that was being deposited or was last checked
 
-        amount :class:`int`:
+        amount :class:`int`: [Optional]
             The quantity of items that were deposited, 0 if none.
 
         Raises:
         -----------
         `NoItemsDepositedError` if the expected text did not appear after 30 seconds.
         """
-        # initial deposit attempt
+        # wait for text from possibly prior attempts to go away
+        while self.deposited_items():
+            self.sleep(0.1)
+
+        self._attempt_deposit()
+        if not get_amount:
+            return None
+
+        # correct wrong items arg type
+        if not isinstance(items, list):
+            items = [items]
+
+        for item in items:
+            if not self.find_item_deposited(item):
+                continue
+
+            # 5 attempts to get a better chance for a good result
+            for _ in range(5):
+                if amount := self._get_amount_deposited(item):
+                    return item, amount
+        return item, 0
+
+    def is_in_deposit_range(self) -> bool:
+        """Returns whether the dedicated storage is currently within the
+        depositing range of the player."""
+        return (
+            self.window.locate_template(
+                "templates/deposit_all.png",
+                region=(0, 0, 1920, 1080),
+                confidence=0.7,
+            )
+            is not None
+        )
+
+    def deposited_items(self) -> bool:
+        """Returns whether an item has been deposited, determined by the green
+        'x items transferred' text on top of the screen."""
+        return (
+            self.window.locate_template(
+                "templates/items_deposited.png",
+                region=self.TRANSFERRED_REGION,
+                confidence=0.75,
+            )
+            is not None
+        )
+
+    def _attempt_deposit(self) -> None:
+        """Presses the 'E' key on a dedi until the deposit text appears.
+
+        Raises a `NoItemsDepositedError` if we were unable to deposit within
+        30 seconds.
+        """
         self.sleep(0.5)
         self.press(self.keybinds.use)
         c = 0
-        # wait until we actually attempted a deposit (lag protection)
+
         while not self.deposited_items():
             self.sleep(0.1)
             c += 1
@@ -80,86 +114,3 @@ class TekDedicatedStorage(Structure):
 
             if c > 300:
                 raise NoItemsDepositedError("Failed to deposit after 30 seconds!")
-
-        if not determine_amount:
-            return None
-
-        if not isinstance(items, list):
-            items = [items]
-
-        # check for each item
-        for item in items:
-            if not self.item_deposited(item):
-                continue
-
-            # 5 attempts to get a better chance for a good result
-            for _ in range(5):
-                # get the amount of deposited items of the items we are depositing
-                amount = self.get_amount_deposited(item)
-                if amount:
-                    break
-            break
-        else:
-            # never got to an item that was deposited, no amount can be determined
-            amount = 0
-
-        # wait for the green text to go away so we can try fresh on the next dedi
-        while self.deposited_items():
-            self.sleep(0.1)
-        return item, amount
-
-    def get_amount_deposited(self, item: Item) -> int:
-        """Checks how much of the given item was deposited."""
-        # check if any was deposited
-        if not (dust_pos := self.item_deposited(item)):
-            print(f"No {item.name} was deposited.")
-            return 0
-
-        print(f"{item.name} deposited! Attempting to determine amount!")
-
-        # get our region of interest
-        text_start_x = dust_pos[0] + dust_pos[2]
-        text_end = text_start_x + self.window.convert_width(130), dust_pos[1]
-        roi = (*text_end, self.window.convert_width(290), self.window.convert_height(25))
-
-        if not item.added_text:
-            raise Exception(f"You did not define an 'added_text' for {item}!")
-
-        # find the items name to crop out the numbers
-        name_text = self.window.locate_template(
-            item.added_text, region=roi, confidence=0.7, convert=False
-        )
-
-        # not worth trying to find out the amount without proper roi
-        if not name_text:
-            return 0
-
-        # get our region of interest (from end of "Removed:" to start of "Element")
-        roi = (
-            *text_end,
-            self.window.convert_width(int(name_text[0] - text_end[0])),
-            self.window.convert_height(25),
-        )
-
-        # grab the region of interest and apply denoising
-        img = self.window.grab_screen(roi, convert=False)
-        img = self.window.denoise_text(img, denoise_rgb=(255, 255, 255), variance=5)
-
-        raw_result = tes.image_to_string(
-            img,
-            config="-c tessedit_char_whitelist=0123456789liIxObL --psm 7 -l eng",
-        )
-
-        # replace all the mistaken "1"s
-        for char in ["I", "l", "i", "b", "L"]:
-            raw_result = raw_result.replace(char, "1")
-
-        # replace mistaken "0"s, strip off newlines
-        filtered = raw_result.replace("O", "0").rstrip()
-
-        # find the x to slice out the actual number
-        x = filtered.find("x")
-        if x == -1 or not filtered or filtered == "x":
-            return 0
-
-        return int(filtered[:x])

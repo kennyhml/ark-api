@@ -13,11 +13,9 @@ import win32clipboard  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ...exceptions import (
-    InventoryNotAccessibleError,
-    InventoryNotClosableError,
-    ReceivingRemoveInventoryTimeout,
-)
+from ...exceptions import (InventoryNotAccessibleError,
+                           InventoryNotClosableError,
+                           ReceivingRemoveInventoryTimeout)
 from ...items import Item
 
 
@@ -56,7 +54,7 @@ class Inventory(Ark):
     LAST_TRANSFER_ALL = time.time()
 
     def __init__(
-        self, entity_name: str, action_wheel_img: str, max_slots: Optional[str] = None
+        self, entity_name: str, action_wheel_img: str, max_slots: Optional[str | int] = None
     ) -> None:
         super().__init__()
         self._name = entity_name
@@ -115,14 +113,14 @@ class Inventory(Ark):
     def item_added(self) -> bool:
         """Checks if an item was added by matching for the added template"""
         return self.window.locate_template(
-            f"ark/templates/added.png", region=self.ADDED_REGION, confidence=0.7
+            f"templates/added.png", region=self.ADDED_REGION, confidence=0.7
         )
 
     def is_open(self) -> bool:
         """Checks if the inventory is open."""
         return (
             self.window.locate_template(
-                "ark/templates/inventory.png", region=self.INVENTORY_REGION, confidence=0.8
+                "templates/inventory.png", region=self.INVENTORY_REGION, confidence=0.8
             )
             is not None
         )
@@ -241,7 +239,7 @@ class Inventory(Ark):
         for _ in range(3):
             for index, option in enumerate(options, start=1):
                 if self.window.locate_template(
-                    f"ark/templates/folder_{option}.png",
+                    f"templates/folder_{option}.png",
                     region=(1240, 290, 55, 34),
                     confidence=0.9,
                 ):
@@ -283,7 +281,7 @@ class Inventory(Ark):
         """Checks if the 'Receiving Remote Inventory' text is visible."""
         return (
             self.window.locate_template(
-                "ark/templates/remote_inventory.png",
+                "templates/remote_inventory.png",
                 region=(1346, 563, 345, 43),
                 confidence=0.8,
             )
@@ -430,7 +428,7 @@ class Inventory(Ark):
             self.sleep(1)
             return (
                 self.window.locate_template(
-                    f"ark/templates/{self._action_wheel_img}.png",
+                    f"templates/{self._action_wheel_img}.png",
                     region=(840, 425, 240, 230),
                     confidence=0.7,
                 )

@@ -2,9 +2,6 @@
 Ark API module representing the tribelog in ark.
 Using tesseract OCR and discord webhooks to inform the user when getting raided.
 """
-
-import logging
-from datetime import datetime
 from threading import Thread
 
 import cv2 as cv  # type: ignore[import]
@@ -21,16 +18,6 @@ from ...exceptions import LogsNotOpenedError
 from .config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
                      EVENT_MAPPING, INGORED_TERMS)
 from .message import TribeLogMessage
-
-# configure logging file, helps debugging why certain stuff didnt get posted
-time = datetime.now()
-now_time = time.strftime("%d-%m")
-logging.basicConfig(
-    level=logging.INFO,
-    filename=f"logs/tribelogs {now_time}.log",
-    filemode="w",
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
 
 
 class TribeLog(Ark):
@@ -78,7 +65,6 @@ class TribeLog(Ark):
 
         Read `update_tribelogs` docstring for more information about the tribelogging.
         """
-        logging.log(logging.INFO, "Updating tribelogs...")
         self.open()
         self.window.grab_screen(self.LOG_REGION, "temp/tribelog.png")
         self.close()
@@ -88,7 +74,7 @@ class TribeLog(Ark):
         """Checks if the tribelog is open."""
         return (
             self.window.locate_template(
-                "ark/templates/tribe_log.png", region=(1300, 70, 230, 85), confidence=0.8
+                "templates/tribe_log.png", region=(1300, 70, 230, 85), confidence=0.8
             )
             is not None
         )
@@ -201,7 +187,6 @@ class TribeLog(Ark):
         log_img = Image.open("temp/tribelog.png")
         day_points = self.get_day_occurrences()
         days_in_order = sorted([day for day in day_points], key=lambda t: t[1])
-        logging.log(logging.INFO, f"{len(day_points)} days found to check...")
 
         messages = []
         for i, box in enumerate(days_in_order, start=1):
@@ -226,7 +211,6 @@ class TribeLog(Ark):
             except:
                 continue
 
-            logging.log(logging.INFO, f"Found {day} with contents {content}")
             print(f"Found {day} with contents {content}")
 
             # check if the message is already known or if the contents are irrelevant
@@ -241,10 +225,8 @@ class TribeLog(Ark):
             # if its not the first time we update our internal logs, send out alerts for the message
             # if 3 alerts are sent within the same log update, @everyone for the message
             if self._tribe_log:
-                logging.log(logging.INFO, f"Sending an alert for {message}!")
                 self.send_alert(message, multiple=len(messages) == 3)
 
-        logging.log(logging.INFO, f"New messages added: {messages}!")
         self._tribe_log += reversed(messages)
         self.delete_old_logs()
         # self.send_to_discord(
@@ -254,7 +236,6 @@ class TribeLog(Ark):
         #     name="Ling Ling Logs",
         #     avatar="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
         # )
-        logging.log(logging.INFO, f"Updated tribelog: {self._tribe_log}")
 
     def send_alert(self, message: TribeLogMessage, multiple: bool = False) -> None:
         """Sends an alert to discord with the given message."""
@@ -304,7 +285,7 @@ class TribeLog(Ark):
         img = img.crop(box=(0, 0, 50, img.height))
 
         return self.window.locate_all_in_image(
-            "ark/templates/tribelog_day.png", img, confidence=0.8
+            "templates/tribelog_day.png", img, confidence=0.8
         )
 
     def get_daytime(self, image: str | Image.Image | ScreenShot) -> str | None:
@@ -344,7 +325,6 @@ class TribeLog(Ark):
                 return None
 
         except Exception as e:
-            logging.log(logging.WARNING, f"Day {day_string} invalid!\n{e}")
             return None
 
         return day_string.strip()
@@ -435,7 +415,7 @@ class TribeLog(Ark):
         try:
             # filter out auto-decay
             if self.window.locate_in_image(
-                "ark/templates/tribelog_auto_decay.png", image, confidence=0.8
+                "templates/tribelog_auto_decay.png", image, confidence=0.8
             ):
                 return None
 
@@ -477,12 +457,12 @@ class TribeLog(Ark):
         A string representing the tek sensor event in the passed image.
         """
         if self.window.locate_in_image(
-            "ark/templates/tribelog_enemy_survivor.png", image, confidence=0.75
+            "templates/tribelog_enemy_survivor.png", image, confidence=0.75
         ):
             return "an enemy survivor"
 
         if self.window.locate_in_image(
-            "ark/templates/tribelog_enemy_dino.png", image, confidence=0.75
+            "templates/tribelog_enemy_dino.png", image, confidence=0.75
         ):
             return "an enemy dinosaur"
         # not determined
@@ -500,7 +480,6 @@ class TribeLog(Ark):
         ------------
         `True` if the day is already in the database else `False`
         """
-        logging.log(logging.INFO, f"Checking if {day} is already in database.")
         # initial log save, no days known yet
         if not self._tribe_log:
             return False
@@ -522,12 +501,7 @@ class TribeLog(Ark):
     def delete_old_logs(self) -> None:
         """Deletes all but the past 30 messages in the tribelogs."""
         if len(self._tribe_log) < 30:
-            logging.log(logging.INFO, "Not enough tribelog events to delete.")
             return
 
         old_length = len(self._tribe_log)
         self._tribe_log = self._tribe_log[-30:]
-        logging.log(
-            logging.INFO,
-            f"Deleted {old_length - len(self._tribe_log)} old tribelog messages.",
-        )

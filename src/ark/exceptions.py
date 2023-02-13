@@ -27,6 +27,11 @@ class NoItemsDepositedError(Exception):
 class NoGasolineError(Exception):
     """Raised when a structure can not be turned on"""
 
+    def __init__(self, structure_name) -> None:
+        self.structure = structure_name
+
+    def __str__(self) -> str:
+        return f"{self.structure} is out of gasoline!"
 
 class TekPodNotAccessibleError(Exception):
     """Raised when the tek pod cannot be accessed."""

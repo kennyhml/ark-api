@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
-
 from dataclasses import dataclass
+
 import dacite
+
+from .config import KEYBINDS_FILE
+
 
 @dataclass
 class Keybinds:
@@ -30,7 +33,7 @@ class Keybinds:
     @staticmethod
     def load() -> Keybinds:
         """Returns a keybinds object created from the configs."""
-        with open("settings/keybinds.json") as f:
+        with open(KEYBINDS_FILE) as f:
             data = json.load(f)
 
         return dacite.from_dict(Keybinds, data)

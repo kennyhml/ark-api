@@ -141,7 +141,7 @@ class PlayerInventory(Inventory):
         we wouldnt wanna waste time clicking empty slots RIGHT @SLEEPY!!?"""
         return (
             self.window.locate_template(
-                "ark/templates/inventory_pellet.png",
+                "templates/inventory_pellet.png",
                 region=(116, 700, 95, 90),
                 confidence=0.8,
             )
