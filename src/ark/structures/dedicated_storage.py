@@ -9,9 +9,10 @@ from .structure import Structure
 
 
 class TekDedicatedStorage(Structure):
-    """Represents the grinder inventory in ark.
+    """Represents the Tek Storage in Ark.
 
-    Is able to be turned on and off and grind all.
+    Extends the abilities a regular `Structure` provides by adding
+    deposit-interaction related methods.
     """
 
     TRANSFERRED_REGION = (710, 4, 460, 130)

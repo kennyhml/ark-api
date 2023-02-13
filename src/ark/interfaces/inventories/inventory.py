@@ -61,6 +61,9 @@ class Inventory(Ark):
         self._action_wheel_img = action_wheel_img
         self._max_slots_img = max_slots
 
+    def __str__(self) -> str:
+        return f"Inventory of {self._name} with max slots {self._max_slots_img}"
+
     def click_drop_all(self) -> None:
         """Clicks the drop all button at the classes drop all position"""
         self.click_at(self.DROP_ALL, delay=0.2)

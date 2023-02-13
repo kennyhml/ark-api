@@ -41,7 +41,7 @@ class Structure(Ark):
         self._max_slots = max_slots
 
     def __str__(self) -> str:
-        return f"{type(self).__name__} '{self._name}' with inventory {self.inventory}"
+        return f"Structure '{self._name}' of type '{type(self).__name__}'"
 
     def __repr__(self) -> str:
         return (
