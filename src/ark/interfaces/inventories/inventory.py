@@ -13,6 +13,7 @@ import win32clipboard  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
+from ..._tools import get_filepath
 from ...exceptions import (InventoryNotAccessibleError,
                            InventoryNotClosableError,
                            ReceivingRemoveInventoryTimeout)
@@ -54,15 +55,23 @@ class Inventory(Ark):
     LAST_TRANSFER_ALL = time.time()
 
     def __init__(
-        self, entity_name: str, action_wheel_img: str, max_slots: Optional[str | int] = None
+        self,
+        entity_name: str,
+        max_slots: Optional[str | int] = None,
     ) -> None:
         super().__init__()
         self._name = entity_name
-        self._action_wheel_img = action_wheel_img
-        self._max_slots_img = max_slots
+        self._max_slots = max_slots
+        if isinstance(max_slots, str):
+            self._max_slots = get_filepath(max_slots)
 
     def __str__(self) -> str:
-        return f"Inventory of {self._name} with max slots {self._max_slots_img}"
+        return f"Inventory of {self._name} with max slots {self._max_slots}"
+
+    @property
+    def max_slots(self) -> int | str | None:
+        return self._max_slots
+
 
     def click_drop_all(self) -> None:
         """Clicks the drop all button at the classes drop all position"""

@@ -9,9 +9,6 @@ in.
 Note that the ark window class expects points and templates to be taken on 1920x1080
 resolution.
 """
-import os
-from typing import Literal, Optional, overload
-
 import cv2 as cv  # type: ignore[import]
 import numpy as np
 import PIL  # type: ignore[import]
@@ -26,7 +23,6 @@ from ._tools import get_center
 
 # set tesseract path
 tes.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-PKG_PATH = os.path.dirname(__file__) + "\\"
 
 
 class ArkWindow:
@@ -272,7 +268,7 @@ class ArkWindow:
     ):
         """Finds the location of the given image in the given template."""
         return pg.locate(
-            PKG_PATH + template, image, confidence=confidence, grayscale=grayscale
+            template, image, confidence=confidence, grayscale=grayscale
         )
 
     def locate_all_in_image(
@@ -282,7 +278,7 @@ class ArkWindow:
         return self.filter_points(
             set(
                 pg.locateAll(
-                    PKG_PATH + template,
+                    template,
                     image,
                     confidence=confidence,
                     grayscale=grayscale,
@@ -329,7 +325,6 @@ class ArkWindow:
         """
         if convert:
             region = self.convert_region(region)
-        template = PKG_PATH + template
         haystack: np.ndarray = np.asarray(self.grab_screen(region, convert=False))  # type: ignore[arg-type]
         image_rgb = cv.cvtColor(haystack, cv.COLOR_BGR2RGB)
         img = Image.fromarray(image_rgb)
@@ -349,7 +344,6 @@ class ArkWindow:
         self, template: str, region: tuple, confidence: float, convert: bool = True
     ):
         """Finds all locations of the given template on the screen."""
-        template = PKG_PATH + template
         return self.filter_points(
             set(
                 pg.locateAllOnScreen(

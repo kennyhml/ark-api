@@ -1,10 +1,11 @@
+from argparse import Action
 from typing import Any, Optional
 
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from .._ark import Ark
 from ..exceptions import NoGasolineError
-from ..interfaces import Inventory
+from ..interfaces import ActionWheel, Inventory
 from ..items import Item
 
 
@@ -22,7 +23,7 @@ class Structure(Ark):
     def __init__(
         self,
         name: str,
-        action_wheel: str,
+        action_wheel: ActionWheel | str,
         inventory: Optional[Inventory] = None,
         craftables: Optional[list[Item]] = None,
         max_slots: Optional[int | str] = None,
@@ -30,15 +31,18 @@ class Structure(Ark):
         toggleable: bool = False,
     ) -> None:
         super().__init__()
+        if isinstance(action_wheel, str):
+            action_wheel = ActionWheel(name, action_wheel)
+
         if inventory is None:
-            self.inventory = Inventory(name, action_wheel, max_slots)
+            self.inventory = Inventory(name, max_slots)
         else:
             self.inventory = inventory
+        self.action_wheel = action_wheel
+
         self._name = name
         self._toggleable = toggleable
-        self._action_wheel = action_wheel
         self._craftables = craftables
-        self._max_slots = max_slots
 
     def __str__(self) -> str:
         return f"Structure '{self._name}' of type '{type(self).__name__}'"
@@ -46,8 +50,8 @@ class Structure(Ark):
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}(name={self._name}, inventory={self.inventory},"
-            f"action_wheel={self._action_wheel}, craftables={self._craftables},"
-            f"max_slots={self._max_slots}, toggleable={self._toggleable})"
+            f"action_wheel={self.action_wheel}, craftables={self._craftables},"
+            f"toggleable={self._toggleable})"
         )
 
     @property
@@ -57,10 +61,6 @@ class Structure(Ark):
     @property
     def craftables(self) -> list[Item] | None:
         return self._craftables
-
-    @property
-    def max_slots(self) -> int | str | None:
-        return self._max_slots
 
     @property
     def toggleable(self) -> bool:
@@ -116,7 +116,7 @@ class Structure(Ark):
 
         return (
             self.window.locate_template(
-                "templates/turn_off.png",
+                f"{self.PKG_DIR}/assets/interfaces/templates/turn_off.png",
                 region=self.TOGGLE_BUTTON,
                 confidence=0.85,
                 grayscale=True,
@@ -128,7 +128,7 @@ class Structure(Ark):
         """Return whether the Structure can be turned on."""
         return (
             self.window.locate_template(
-                "templates/turn_on.png",
+                f"{self.PKG_DIR}/assets/interfaces/turn_on.png",
                 region=self.TOGGLE_BUTTON,
                 confidence=0.85,
                 grayscale=True,

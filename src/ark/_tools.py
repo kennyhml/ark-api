@@ -9,7 +9,8 @@ import win32clipboard  # type: ignore[import]
 
 from .exceptions import TerminatedError
 from .state import State
-
+from pathlib import Path
+import os
 
 def state_checker(func: Callable):
     """Checks on the Threads state before executing"""
@@ -24,6 +25,17 @@ def state_checker(func: Callable):
         return func(*args, **kwargs)
 
     return wrapper
+
+def get_filepath(filepath: str) -> str:
+    """Validates the given filepath to allow to adjust files to the package
+    path as well as loading files from the relative bot files."""
+    if os.path.exists(filepath):
+        return filepath.replace("/", "\\")
+
+    abs_path = os.path.join(str(Path(__file__).parent), filepath)
+    if not os.path.exists(abs_path):
+        raise FileNotFoundError(f"Could not find {filepath} anywhere.")
+    return abs_path.replace("/", "\\")
 
 def timedout(timer: float, max_time: int | float) -> bool:
     """Checks whether the given timer has exceeded the maximum time"""

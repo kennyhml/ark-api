@@ -8,13 +8,14 @@ from ._tools import state_checker
 from ._keybinds import Keybinds
 from .window import ArkWindow
 
-
+from pathlib import Path
 class Ark:
     """Base parent class for all classes representing objects in Lost Ark
     Provides access to the games window, mouse and keypress simulation,
     and program state checking.
     """
 
+    PKG_DIR = str(Path(__file__).parent)
     window: ArkWindow = None  # type: ignore[assignment]
 
     def __init__(self) -> None:
