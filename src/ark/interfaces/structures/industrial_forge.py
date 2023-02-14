@@ -24,7 +24,7 @@ class IndustrialForge(Structure):
             max_slots="assets/interfaces/forge_full.png",
             toggleable=True,
         )
-        self._started_cooking = started_cooking
+        self.started_cooking = started_cooking
         self._burning_item = burning_item
 
     @property
@@ -40,9 +40,8 @@ class IndustrialForge(Structure):
         self._burning_item = item
 
     @property
-    def done_burning(self) -> bool:
-        if self._started_cooking is None:
+    def is_done_burning(self) -> bool:
+        if self.started_cooking is None:
             return True
-
-        delta = datetime.now() - self._started_cooking
+        delta = datetime.now() - self.started_cooking
         return delta.total_seconds() > self.BURNING_DURATIONS[self.burning_item] * 3600

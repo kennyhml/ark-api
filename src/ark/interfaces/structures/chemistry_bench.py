@@ -1,4 +1,4 @@
-from ark.structures.structure import Structure
+from .structure import Structure
 
 
 class ChemistryBench(Structure):

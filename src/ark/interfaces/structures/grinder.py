@@ -1,7 +1,6 @@
 
 from .structure import Structure
 
-
 class Grinder(Structure):
     """Represents the grinder inventory in ark.
 

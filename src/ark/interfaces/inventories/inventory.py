@@ -14,10 +14,13 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
 from ..._tools import get_filepath
-from ...exceptions import (InventoryNotAccessibleError,
-                           InventoryNotClosableError,
-                           ReceivingRemoveInventoryTimeout)
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    InventoryNotClosableError,
+    ReceivingRemoveInventoryTimeout,
+)
 from ...items import Item
+from .._button import Button
 
 
 class Inventory(Ark):
@@ -42,26 +45,32 @@ class Inventory(Ark):
     whole lot of sense despite being optional.
     """
 
-    INVENTORY_REGION = (1235, 88, 184, 60)
+    FOLDER_VIEW = Button((1663, 188), (1632, 158, 61, 56), "folder_view.png")
+    SHOW_ENGRAMS = Button((1716, 189), (1690, 160, 51, 51), "show_engrams.png")
+    UNL_ENGRAMS = Button((1770, 188), (1742, 160, 56, 54), "unlearned_engrams.png")
+    TRANSFER_ALL = Button((1425, 190))
+    DROP_ALL = Button((1477, 187))
+    CRAFTING_TAB = Button((1716, 118))
+    INVENTORY_TAB = Button((1322, 118), (1235, 88, 184, 60), )
+    CREATE_FOLDER = Button((1584, 187))
+
     SEARCHBAR = (1300, 190)
-    TRANSFER_ALL = (1425, 190)
-    CRAFTING_tab = (1716, 118)
-    INVENTORY_TAB = (1322, 118)
     ADDED_REGION = (40, 1020, 360, 60)
     ITEM_REGION = (1230, 220, 580, 720)
-    DROP_ALL = (1477, 187)
-    CREATE_FOLDER = (1584, 187)
     FIRST_SLOT = (1292, 294)
     LAST_TRANSFER_ALL = time.time()
 
     def __init__(
         self,
         entity_name: str,
+        craftables: Optional[list[Item]] = None,
         max_slots: Optional[str | int] = None,
+
     ) -> None:
         super().__init__()
         self._name = entity_name
         self._max_slots = max_slots
+        self._craftables = craftables
         if isinstance(max_slots, str):
             self._max_slots = get_filepath(max_slots)
 
@@ -72,6 +81,16 @@ class Inventory(Ark):
     def max_slots(self) -> int | str | None:
         return self._max_slots
 
+    @property
+    def craftables(self) -> list[Item] | None:
+        return self._craftables
+
+    def locate_button(self, button: Button, **kwargs) -> bool:
+        assert button.template is not None and button.region is not None
+        return (
+            self.window.locate_template(button.template, button.region, **kwargs)
+            is not None
+        )
 
     def click_drop_all(self) -> None:
         """Clicks the drop all button at the classes drop all position"""

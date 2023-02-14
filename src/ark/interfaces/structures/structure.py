@@ -3,10 +3,12 @@ from typing import Any, Optional
 
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
-from .._ark import Ark
-from ..exceptions import NoGasolineError
-from ..interfaces import ActionWheel, Inventory
-from ..items import Item
+from ..._ark import Ark
+from ...exceptions import NoGasolineError
+from ...items import Item
+from .._button import Button
+from ..inventories import Inventory
+from ..wheels import ActionWheel
 
 
 class Structure(Ark):
@@ -17,7 +19,8 @@ class Structure(Ark):
     the ability to access it's inventory, check it's slots and action wheel.
     """
 
-    TOGGLE_BUTTON = (740, 570, 444, 140)
+    TURN_ON = Button((956, 618), (740, 570, 444, 140), "turn_on.png")
+    TURN_OFF = Button((956, 618), (740, 570, 444, 140), "turn_off.png")
     ITEM_ADDED_REGION = (5, 850, 55, 230)
 
     def __init__(
@@ -31,18 +34,19 @@ class Structure(Ark):
         toggleable: bool = False,
     ) -> None:
         super().__init__()
+        if inventory and any((craftables, max_slots)):
+            raise ValueError(
+                "Did not expect 'craftables' or 'max_slots' alongside 'inventory'."
+            )
         if isinstance(action_wheel, str):
             action_wheel = ActionWheel(name, action_wheel)
-
         if inventory is None:
-            self.inventory = Inventory(name, max_slots)
+            self.inventory = Inventory(name, craftables, max_slots)
         else:
             self.inventory = inventory
         self.action_wheel = action_wheel
-
         self._name = name
         self._toggleable = toggleable
-        self._craftables = craftables
 
     def __str__(self) -> str:
         return f"Structure '{self._name}' of type '{type(self).__name__}'"
@@ -50,17 +54,12 @@ class Structure(Ark):
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}(name={self._name}, inventory={self.inventory},"
-            f"action_wheel={self.action_wheel}, craftables={self._craftables},"
-            f"toggleable={self._toggleable})"
+            f"action_wheel={self.action_wheel}, toggleable={self._toggleable})"
         )
 
     @property
     def name(self) -> str:
         return self._name
-
-    @property
-    def craftables(self) -> list[Item] | None:
-        return self._craftables
 
     @property
     def toggleable(self) -> bool:
@@ -92,17 +91,16 @@ class Structure(Ark):
         if self.is_turned_on():
             return
 
-        # button is missing
-        if not self.can_turn_on():
+        if not self.is_turned_off():
             raise NoGasolineError(self._name)
 
-        while self.can_turn_on():
+        while self.is_turned_off():
             self.click_at(964, 615, delay=0.3)
             self.sleep(1)
 
     def turn_off(self) -> None:
         """Turns the structure off, assumes it is already opened."""
-        if self.can_turn_on():
+        if self.is_turned_off():
             return
 
         while self.is_turned_on():
@@ -113,27 +111,14 @@ class Structure(Ark):
         """Return whether the Structure is turned on."""
         if not self._toggleable:
             raise ValueError(f"{self} is not toggleable!")
-
-        return (
-            self.window.locate_template(
-                f"{self.PKG_DIR}/assets/interfaces/templates/turn_off.png",
-                region=self.TOGGLE_BUTTON,
-                confidence=0.85,
-                grayscale=True,
-            )
-            is not None
+        return self.inventory.locate_button(
+            self.TURN_OFF, grayscale=True, confidence=0.85
         )
 
-    def can_turn_on(self) -> bool:
+    def is_turned_off(self) -> bool:
         """Return whether the Structure can be turned on."""
-        return (
-            self.window.locate_template(
-                f"{self.PKG_DIR}/assets/interfaces/turn_on.png",
-                region=self.TOGGLE_BUTTON,
-                confidence=0.85,
-                grayscale=True,
-            )
-            is not None
+        return self.inventory.locate_button(
+            self.TURN_ON, grayscale=True, confidence=0.85
         )
 
     def _get_amount_deposited(self, item: Item) -> int:

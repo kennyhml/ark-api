@@ -9,9 +9,8 @@ import pydirectinput as input  # type: ignore[import]
 from .._ark import Ark
 from ..buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ..exceptions import InventoryNotAccessibleError, PlayerDidntTravelError
-from ..interfaces import Inventory, PlayerInventory
+from ..interfaces import Inventory, PlayerInventory, Structure
 from ..items import Y_TRAP, Item
-from ..structures import Structure
 
 
 class Player(Ark):

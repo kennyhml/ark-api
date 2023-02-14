@@ -1,10 +1,9 @@
 from typing import Literal, overload
 
-
 from ark.exceptions import NoItemsDepositedError
 
-from ..interfaces.inventories import DedicatedStorageInventory
-from ..items import Item
+from ...items import Item
+from ..inventories import DedicatedStorageInventory
 from .structure import Structure
 
 

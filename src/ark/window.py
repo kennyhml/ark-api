@@ -9,6 +9,7 @@ in.
 Note that the ark window class expects points and templates to be taken on 1920x1080
 resolution.
 """
+from typing import Literal, overload
 import cv2 as cv  # type: ignore[import]
 import numpy as np
 import PIL  # type: ignore[import]
@@ -267,9 +268,7 @@ class ArkWindow:
         self, template: str, image, confidence: float, grayscale: bool = False
     ):
         """Finds the location of the given image in the given template."""
-        return pg.locate(
-            template, image, confidence=confidence, grayscale=grayscale
-        )
+        return pg.locate(template, image, confidence=confidence, grayscale=grayscale)
 
     def locate_all_in_image(
         self, template: str, image, confidence: float, grayscale: bool = False
@@ -287,11 +286,38 @@ class ArkWindow:
             min_dist=15,
         )
 
+    @overload
     def locate_template(
         self,
         template: str,
         region: tuple[int, int, int, int],
         confidence: float,
+        *,
+        grayscale: bool = False,
+        convert: bool = True,
+        center: Literal[True],
+    ) -> tuple[int, int] | None:
+        ...
+
+    @overload
+    def locate_template(
+        self,
+        template: str,
+        region: tuple[int, int, int, int],
+        confidence: float,
+        *,
+        grayscale: bool = False,
+        convert: bool = True,
+        center: Literal[False] = False,
+    ) -> tuple[int, int, int, int] | None:
+        ...
+        
+    def locate_template(
+        self,
+        template: str,
+        region: tuple[int, int, int, int],
+        confidence: float,
+        *,
         grayscale: bool = False,
         convert: bool = True,
         center: bool = False,
