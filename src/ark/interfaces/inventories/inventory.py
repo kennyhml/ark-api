@@ -9,9 +9,12 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 from ..._ark import Ark
 from ..._tools import await_event, get_filepath, timedout, set_clipboard
 from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
-from ...exceptions import (InventoryNotAccessibleError,
-                           InventoryNotClosableError, NoItemsAddedError,
-                           ReceivingRemoveInventoryTimeout)
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    InventoryNotClosableError,
+    NoItemsAddedError,
+    ReceivingRemoveInventoryTimeout,
+)
 from ...items import Item
 from .._button import Button
 
@@ -67,6 +70,7 @@ class Inventory(Ark):
     _CRAFTING_TAB = Button((1716, 118))
     _INVENTORY_TAB = Button((1322, 118), (1235, 88, 184, 60), "inventory.png")
     _CREATE_FOLDER = Button((1584, 187))
+
     _SEARCHBAR = (1300, 190)
     _ADDED_REGION = (40, 1020, 360, 60)
     _ITEM_REGION = (1243, 232, 1708, 883)
@@ -159,6 +163,11 @@ class Inventory(Ark):
 
             if attempts >= 6:
                 raise InventoryNotClosableError(f"Failed to close {self._name}!")
+
+    @final
+    def scroll(self, direction: Literal["up", "down"] = "down", rows: int = 1) -> None:
+        for _ in range(rows):
+            self.mouse_scroll(2.91 * (1 if direction == "up" else -1))
 
     @final
     def search(self, item: Item | str, delete_prior: bool = True) -> None:

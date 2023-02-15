@@ -20,7 +20,8 @@ class TekDedicatedStorage(Structure):
     _ITEM_ADDED_REGION = (0, 430, 160, 350)
 
     def __init__(self) -> None:
-        super().__init__("Tek Dedicated Storage", "assets/wheels/dedi.png", DedicatedStorageInventory())
+        super().__init__("Tek Dedicated Storage", "assets/wheels/dedi.png")
+        self.inventory: DedicatedStorageInventory = DedicatedStorageInventory()
 
     @overload
     def deposit(self, items: list[Item], get_amount: Literal[False]) -> None:

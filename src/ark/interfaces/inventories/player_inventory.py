@@ -2,12 +2,14 @@
 Ark API module representing the players inventory.
 """
 import math
-from typing import Optional
+from typing import Optional, final
 
 import pyautogui as pg  # type: ignore[import]
 
+from ..._tools import await_event
 from ...exceptions import InventoryNotAccessibleError, NoItemsAddedError
 from ...items import Item
+from .._button import Button
 from .inventory import Inventory
 
 
@@ -20,41 +22,43 @@ class PlayerInventory(Inventory):
     Inherits from the `Inventory` class.
     """
 
-    INVENTORY_REGION = (110, 90, 180, 60)
-    SEARCHBAR = (180, 180)
-    TRANSFER_ALL = (350, 180)
-    DROP_ALL = (400, 180)
-    ADDED_REGION = (10, 1000, 220, 80)
-    ITEM_REGION = (110, 30, 580, 1000)
-    CREATE_FOLDER = (513, 189)
-    FIRST_SLOT = (166, 280)
+    SLOTS = [
+        (x + 47, y + 47) for y in range(232, 883, 93) for x in range(117, 582 + 93, 93)
+    ]
+
+    _CREATE_FOLDER = Button((513, 189))
+    _TRANSFER_ALL = Button((350, 180))
+    _DROP_ALL = Button((400, 180))
+    _INVENTORY_TAB = Button((199, 117), (110, 90, 180, 60), "inventory.png")
+    _CRAFTING_TAB = Button((1716, 118))
+
+    _SEARCHBAR = (180, 180)
+    _ADDED_REGION = (10, 1000, 220, 80)
+    _ITEM_REGION = (117, 232, 582, 883)
 
     def __init__(self):
-        super().__init__("Player", None)
+        super().__init__("Player")
 
-    def await_items_added(self) -> None:
-        """Waits for items to be added to the inventory"""
-        c = 0
-        while not self.item_added():
-            c += 1
-            self.sleep(0.1)
-            if c > 300:
-                raise NoItemsAddedError("No Items added after 30 seconds!")
-        self.sleep(0.3)
+    def open(self, *_) -> None:
+        """Opens the player inventory using the specified keybind.
 
-    def open(self) -> None:  # type: ignore[override]
-        """Opens the inventory using the specified keybind.
-        Times out after 30 seconds of unsuccessful attempts raising
-        a `TimeoutError`.
+        If the inventory did not open after 30 seconds,
+        an `InventoryNotAccessibleError` is raised.
         """
-        c = 0
+        attempts = 0
         while not self.is_open():
-            c += 1
             self.press(self.keybinds.inventory)
-            self.sleep(1.5)
+            if await_event(self.is_open, max_duration=5):
+                return
 
-            if c > 20:
-                raise InventoryNotAccessibleError(f"Failed to open {self._name}!")
+            attempts += 1
+            if attempts >= 6:
+                raise InventoryNotAccessibleError(self._name)
+
+    def await_items_added(self, item: Item | str) -> None:
+        """Waits for items to be added to the inventory"""
+        if not await_event(self.received_item, max_duration=30):
+            raise NoItemsAddedError(item.name if isinstance(item, Item) else item)
 
     def transfer_amount(
         self, item: Item, amount: int, target_inventory: Optional[Inventory] = None
@@ -66,7 +70,7 @@ class PlayerInventory(Inventory):
         Else, after each transfer it checks how many stacks of the item are in the
         target inventory and multiplies it by the item stacksize, which is very
         accurate.
-
+        
         Parameters:
         -----------
         item :class:`str`:
@@ -77,11 +81,6 @@ class PlayerInventory(Inventory):
 
         target_inventory :class:`Inventory`: [Optional]
             The inventory to transfer the items to
-
-        TODO:
-        Implement an algorithm to make it slow down as it approaches the desired
-        amount, which would be fairly easy as amount transferred increasing = delay
-        increasing, just need a linear function for it.
         """
         # make sure we dont transfer any other items
         self.search_for(item)

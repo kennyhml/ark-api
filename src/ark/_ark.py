@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 class Ark:
-    """Base parent class for all classes representing objects in Lost Ark
+    """Base parent class for all classes representing objects in ark
     Provides access to the games window, mouse and keypress simulation,
     and program state checking.
     """
@@ -68,6 +68,10 @@ class Ark:
 
         # use pynputs Controller to emulate side mouse button presses
         self.mouse.click(Button.x1 if key == "mouse5" else Button.x2)
+
+    @state_checker
+    def mouse_scroll(self, amount: int) -> None:
+        self.mouse.scroll(0, amount)
 
     @state_checker
     def click(self, button: str) -> None:

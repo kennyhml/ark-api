@@ -59,9 +59,9 @@ class ArkWindow:
 
     def __str__(self) -> str:
         return (
-            f"Lost Ark window: {self._boundaries}\n"
-            f"Lost Ark Monitor: {self._monitor}\n"
-            f"Lost Ark fullscreen: {self._fullscreen}"
+            f"ark window: {self._boundaries}\n"
+            f"ark Monitor: {self._monitor}\n"
+            f"ark fullscreen: {self._fullscreen}"
         )
 
     @property
