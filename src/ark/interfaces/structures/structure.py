@@ -114,7 +114,7 @@ class Structure(Ark):
         `InventoryNotAccessibleError`
             If the Inventory could not be accessed even though it is in
             range (determined by the action wheel)
-        
+
         `WheelNotAccessibleError`
             When no wheel could be opened at all after several attempts
 
@@ -233,11 +233,41 @@ class Structure(Ark):
             item.added_icon, region=self._ITEM_ADDED_REGION, confidence=0.7
         )
 
-    def turn_on(self) -> None:
-        """Turns the structure on, assumes it is already opened.
+    def _find_turn_on_text(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/templates/turn_on.png",
+                (0, 0, 1920, 1080),
+                confidence=0.92,
+            )
+            is not None
+        )
 
-        If the Structure cannot be turned on, a `NoGasolineError` is raised.
+    def _find_turn_off_text(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/templates/turn_off.png",
+                (0, 0, 1920, 1080),
+                confidence=0.92,
+            )
+            is not None
+        )
+
+    def turn_on(self) -> None:
+        """Turns the structure on, if not inside an inventory, it will first
+        look for the 'TURN ON' text to toggle the structure from outside.
+
+        Otherwise the inventory will be opened (if it is not already), and
+        the structure will be toggled through the inventory.
+
+        Raises a `NoGasolineError` if the structure cannot be turned on.
         """
+        if not self.inventory.is_open() and self._find_turn_on_text():
+            self.press(self.keybinds.use)
+            self.sleep(0.3)
+            return
+
+        self.inventory.open()
         if self.is_turned_on():
             return
 
@@ -250,6 +280,13 @@ class Structure(Ark):
 
     def turn_off(self) -> None:
         """Turns the structure off, assumes it is already opened."""
+
+        if not self.inventory.is_open() and self._find_turn_off_text():
+            self.press(self.keybinds.use)
+            self.sleep(0.3)
+            return
+
+        self.inventory.open()
         if self.is_turned_off():
             return
 

@@ -72,7 +72,7 @@ def await_event(
 
     log_str = f"Awaiting function '{func.__name__}'"
     if hasattr(func, "__self__"):
-        log_str += f" of '{type(func.__self__).__name__}'"
+        log_str += f" of '{type(func.__self__).__name__}' "
     log_str += f"to return '{expected_return_value}' within {max_duration}s"
     print(log_str)
 
@@ -139,9 +139,26 @@ def filter_points(points: set, minimum_distance: int) -> set:
             filtered.add(eps)
     return filtered
 
-def set_clipboard(self, text):
+def set_clipboard(text):
     """Puts the passed text into the clipboard to allow for pasting"""
     win32clipboard.OpenClipboard()
     win32clipboard.EmptyClipboard()
     win32clipboard.SetClipboardText(text, win32clipboard.CF_TEXT)
     win32clipboard.CloseClipboard()
+    
+def format_seconds(seconds: int) -> str:
+    """Formats a number in seconds to a string nicely displaying it in
+    different formats."""
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+
+    days, hours, minutes = round(days), round(hours), round(minutes)
+    if days:
+        return f"{days} day{'s' if days != 1 else ''} {hours} hour{'s' if hours != 1 else ''} {minutes} minute{'s' if minutes != 1 else ''}"
+    elif hours:
+        return f"{hours} hour{'s' if hours != 1 else ''} {minutes} minute{'s' if minutes != 1 else ''}"
+    elif minutes:
+        return f"{minutes} minute{'s' if minutes != 1 else ''} {seconds} second{'s' if seconds != 1 else ''}"
+    else:
+        return f"{seconds} seconds"

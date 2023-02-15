@@ -1,13 +1,13 @@
 import math
 import time
-from typing import Iterable, Literal, Optional, overload
+from typing import Iterable, Literal, Optional, final, overload
 
 import pyautogui as pg  # type: ignore[import]
 import win32clipboard  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import await_event, get_filepath, timedout
+from ..._tools import await_event, get_filepath, timedout, set_clipboard
 from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
 from ...exceptions import (InventoryNotAccessibleError,
                            InventoryNotClosableError, NoItemsAddedError,
@@ -160,6 +160,7 @@ class Inventory(Ark):
             if attempts >= 6:
                 raise InventoryNotClosableError(f"Failed to close {self._name}!")
 
+    @final
     def search(self, item: Item | str, delete_prior: bool = True) -> None:
         """Searches for an item or word in the searchbar. Then presses
         escape to tab back out of the spacebar.
@@ -179,6 +180,7 @@ class Inventory(Ark):
         # escape out of the searchbar so presing f closes the inventory
         self.press("esc")
 
+    @final
     def drop_all(self, items: Optional[Iterable[Item | str]] = None) -> None:
         """Searches for an iterable of Items or words and drops all. If no
         items are passed, it simply drops without searching for anything.
@@ -203,6 +205,7 @@ class Inventory(Ark):
             self.search(item)
             self.click_at(self._DROP_ALL.location)
 
+    @final
     def transfer_all(self, items: Optional[Iterable[Item | str]] = None) -> None:
         """Searches for an iterable of Items or words and transfers all. If no
         items are passed, it simply transfers all without searching for anything.
@@ -235,6 +238,7 @@ class Inventory(Ark):
             self.search(item)
             press_button()
 
+    @final
     def open_tab(self, tab: Literal["inventory", "crafting"]) -> None:
         """Opens the requested tab, either the inventory or crafting. Ensures
         the inventory is open before doing so to avoid punching.
@@ -251,6 +255,7 @@ class Inventory(Ark):
         else:
             raise ValueError(f"Expected one of ['inventory', 'crafting'], got {tab}")
 
+    @final
     def drop(self, item: Item) -> None:
         """Searches for the given item and popcorns it until there is none left.
 
@@ -264,6 +269,7 @@ class Inventory(Ark):
             self.move_to(position)
             self.press(self.keybinds.drop)
 
+    @final
     def count(self, item: Item) -> int:
         """Returns the amount of stacks of the given item located within the inventory."""
         return len(
@@ -275,6 +281,7 @@ class Inventory(Ark):
             )
         )
 
+    @final
     def find(self, item: Item) -> tuple[int, int] | None:
         """Returns the position of the given item within the inventory.
 
@@ -294,6 +301,7 @@ class Inventory(Ark):
             grayscale=True,
         )
 
+    @final
     def has(self, item: Item) -> bool:
         """Returns whether the player inventory has an item.
 
@@ -317,6 +325,7 @@ class Inventory(Ark):
     def take(self, item: Item, *, stacks: int) -> None:
         ...
 
+    @final
     def take(self, item: Item, *, stacks: int = 0, amount: int = 1) -> None:
         """Searches the given item and takes one.
 
@@ -371,6 +380,57 @@ class Inventory(Ark):
                 if timedout(start, 30):
                     raise NoItemsAddedError(item.name)
 
+    @overload
+    def manage_view_option(
+        self,
+        option: Literal["folder view", "show engrams", "unlearned engrams"],
+    ) -> bool:
+        ...
+
+    @overload
+    def manage_view_option(
+        self,
+        option: Literal["folder view", "show engrams", "unlearned engrams"],
+        *,
+        set_to: bool,
+    ) -> None:
+        ...
+
+    def manage_view_option(
+        self,
+        option: Literal["folder view", "show engrams", "unlearned engrams"],
+        *,
+        set_to: Optional[bool] = None,
+    ) -> bool | None:
+        """Manages the inventories view option buttons. If `set_to` is not passed,
+        it simply returns whether a given option is currently enabled.
+
+        Parameters
+        ----------
+        option :class:`Literal["folder view", "show engrams", "unlearned engrams"]`:
+            The option to check or change
+
+        set_to :class:`Optional[bool]`:
+            The state to set the option to, `None` by default
+        """
+        if option not in ["folder view", "show engrams", "unlearned engrams"]:
+            raise ValueError(
+                f'Expected one of {["folder view", "show engrams", "unlearned engrams"]}, got {option}'
+            )
+
+        buttons = {
+            "folder view": self._FOLDER_VIEW,
+            "show engrams": self._SHOW_ENGRAMS,
+            "unlearned engrams": self._UNL_ENGRAMS,
+        }
+        state = self.locate_button(buttons[option], confidence=0.8)
+        if set_to is None:
+            return state
+
+        if state != set_to:
+            self.click_at(buttons[option].location)
+        return None
+
     def get_folder_index(self) -> int:
         """Returns the number of the crop plot in the stack by checking for
         the folder name from AAA to HHH, being 1 to 9."""
@@ -387,10 +447,7 @@ class Inventory(Ark):
 
     def create_folder(self, name: str) -> None:
         """Creates a folder in the inventory at the classes folder button"""
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(name, win32clipboard.CF_TEXT)
-        win32clipboard.CloseClipboard()
+        set_clipboard(name)
 
         self.click_at(1585, 187)
         self.sleep(0.3)

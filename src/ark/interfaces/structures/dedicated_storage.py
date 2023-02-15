@@ -1,12 +1,14 @@
-from typing import Literal, overload
+from typing import Literal, final, overload
 
-from ark.exceptions import NoItemsDepositedError
+from ark.exceptions import InventoryNotAccessibleError, NoItemsDepositedError
 
+from ..._tools import await_event
 from ...items import Item
 from ..inventories import DedicatedStorageInventory
 from .structure import Structure
 
 
+@final
 class TekDedicatedStorage(Structure):
     """Represents the Tek Storage in Ark.
 
@@ -14,11 +16,11 @@ class TekDedicatedStorage(Structure):
     deposit-interaction related methods.
     """
 
-    TRANSFERRED_REGION = (710, 4, 460, 130)
-    ITEM_ADDED_REGION = (0, 430, 160, 350)
+    _TRANSFERRED_REGION = (710, 4, 460, 130)
+    _ITEM_ADDED_REGION = (0, 430, 160, 350)
 
     def __init__(self) -> None:
-        super().__init__("Tek Dedicated Storage", "dedi", DedicatedStorageInventory())
+        super().__init__("Tek Dedicated Storage", "assets/wheels/dedi.png", DedicatedStorageInventory())
 
     @overload
     def deposit(self, items: list[Item], get_amount: Literal[False]) -> None:
@@ -62,7 +64,7 @@ class TekDedicatedStorage(Structure):
             items = [items]
 
         for item in items:
-            if not self.find_item_deposited(item):
+            if not self._find_item_deposited(item):
                 continue
 
             # 5 attempts to get a better chance for a good result
@@ -70,6 +72,15 @@ class TekDedicatedStorage(Structure):
                 if amount := self._get_amount_deposited(item):
                     return item, amount
         return item, 0
+
+    def can_be_opened(self) -> bool:
+        """Checks if the dedi can be opened by attempting to do so"""
+        try:
+            self.open()
+        except InventoryNotAccessibleError:
+            return False
+        self.close()
+        return True
 
     def is_in_deposit_range(self) -> bool:
         """Returns whether the dedicated storage is currently within the
@@ -89,7 +100,7 @@ class TekDedicatedStorage(Structure):
         return (
             self.window.locate_template(
                 "templates/items_deposited.png",
-                region=self.TRANSFERRED_REGION,
+                region=self._TRANSFERRED_REGION,
                 confidence=0.75,
             )
             is not None
@@ -101,16 +112,12 @@ class TekDedicatedStorage(Structure):
         Raises a `NoItemsDepositedError` if we were unable to deposit within
         30 seconds.
         """
-        self.sleep(0.5)
-        self.press(self.keybinds.use)
-        c = 0
-
+        attempts = 0
         while not self.deposited_items():
-            self.sleep(0.1)
-            c += 1
-            # retry every 3 seconds
-            if c % 30 == 0:
-                self.press(self.keybinds.use)
+            self.press(self.keybinds.use)
+            if await_event(self.deposited_items, max_duration=3):
+                return
 
-            if c > 300:
+            attempts += 1
+            if attempts >= 10:
                 raise NoItemsDepositedError("Failed to deposit after 30 seconds!")
