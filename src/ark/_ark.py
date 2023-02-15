@@ -9,6 +9,8 @@ from ._keybinds import Keybinds
 from .window import ArkWindow
 
 from pathlib import Path
+
+
 class Ark:
     """Base parent class for all classes representing objects in Lost Ark
     Provides access to the games window, mouse and keypress simulation,
@@ -79,7 +81,9 @@ class Ark:
         pg.click()
         self.sleep(delay)
 
-    def click_at(self, x=None, y=None, button: str = "left", delay: float = 0.1):
+    def click_at(
+        self, x=None, y=None, button: str = "left", delay: float = 0.1, clicks: int = 1
+    ):
         """Moves to a given location and clicks with the mouse.
         Parameters:
         ----------
@@ -91,5 +95,5 @@ class Ark:
         x, y = pg._normalizeXYArgs(x, y)
         self.move_to(x, y)
         self.sleep(delay)
-        pg.click(button=button)
+        pg.click(button=button, clicks=clicks)
         self.sleep(0.1)

@@ -1,10 +1,9 @@
-from argparse import Action
 from typing import Any, Optional
 
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ...exceptions import NoGasolineError
+from ...exceptions import InventoryNotAccessibleError, NoGasolineError
 from ...items import Item
 from .._button import Button
 from ..inventories import Inventory
@@ -14,14 +13,55 @@ from ..wheels import ActionWheel
 class Structure(Ark):
     """Represents a structure in ARK.
 
-    A structure provides information about what interactions with it
-    are possible, what items can be crafted in it (if any), as well as
-    the ability to access it's inventory, check it's slots and action wheel.
+    A structure provides access to it's inventory and allows to toggle
+    it on or off, as well as check how many items were deposited into it
+    and whats currently inside of it. The `name` does not have to match
+    it's real in-game name, you may alter or enumerate the station names
+    to keep track of different objects.
+
+    Parameters
+    ----------
+    name :class:`str`:
+        The name of the structure it represents.
+
+    action_wheel :class:`ActionWheel | str`:
+        The action wheel of the structure, either a previously created wheel
+        or the filepath to the wheel image to create the wheel.
+
+    inventory :class:`Inventory` [Optional]:
+        The pre-created inventory of the structure, if not passed one will be created.
+
+    craftables :class:`list[Item]` [Optional]:
+        A list of items that can be crafted in the structure, onl to be passed if
+        `inventory` was not.
+
+    capacity :class:`str | int` [Optional]:
+        The capacity of the structure, either as integer or a filepath leading
+        to the file of the capped structure.
+
+    toggleable :class:`bool`:
+        Whether the structure can be turned on and off, `False` by default.
+
+    Attributes:
+    -----------
+    TURN_ON :class:`Button`-
+        A representation of the 'turn on' button for toggleable structures
+
+    TURN_OFF :class:`Button`-
+        A representation of the 'turn off' button for toggleable structures
+
+    Properties:
+    -----------
+    name :class:`str`[get]:
+        The name the structure was initialized with
+
+    toggleable :class:`bool`[get]:
+        Whether the structure is toggleable
     """
 
     TURN_ON = Button((956, 618), (740, 570, 444, 140), "turn_on.png")
     TURN_OFF = Button((956, 618), (740, 570, 444, 140), "turn_off.png")
-    ITEM_ADDED_REGION = (5, 850, 55, 230)
+    _ITEM_ADDED_REGION = (5, 850, 55, 230)
 
     def __init__(
         self,
@@ -29,19 +69,19 @@ class Structure(Ark):
         action_wheel: ActionWheel | str,
         inventory: Optional[Inventory] = None,
         craftables: Optional[list[Item]] = None,
-        max_slots: Optional[int | str] = None,
+        capacity: Optional[int | str] = None,
         *,
         toggleable: bool = False,
     ) -> None:
         super().__init__()
-        if inventory and any((craftables, max_slots)):
+        if inventory and any((craftables, capacity)):
             raise ValueError(
-                "Did not expect 'craftables' or 'max_slots' alongside 'inventory'."
+                "Did not expect 'craftables' or 'capacity' alongside 'inventory'."
             )
         if isinstance(action_wheel, str):
             action_wheel = ActionWheel(name, action_wheel)
         if inventory is None:
-            self.inventory = Inventory(name, craftables, max_slots)
+            self.inventory = Inventory(name, craftables, capacity)
         else:
             self.inventory = inventory
         self.action_wheel = action_wheel
@@ -66,60 +106,30 @@ class Structure(Ark):
         return self._toggleable
 
     def open(self) -> None:
-        """Wraps the inventory `open` function."""
-        self.inventory.open()
+        """Wraps the inventory `open` function using the action wheel to
+        validate whether we are actually in range of it on failure.
+
+        Raises
+        ------
+        `InventoryNotAccessibleError`
+            If the Inventory could not be accessed even though it is in
+            range (determined by the action wheel)
+        
+        `WheelNotAccessibleError`
+            When no wheel could be opened at all after several attempts
+
+        `UnexpectedWheelError`
+            When a wheel was opened but is of an unexpected entity
+        """
+        try:
+            self.inventory.open()
+        except InventoryNotAccessibleError:
+            self.action_wheel.activate()
+            self.inventory.open(max_duration=20)
 
     def close(self) -> None:
         """Wraps the inventory `close` function."""
         self.inventory.close()
-
-    def find_item_deposited(self, item: Item) -> Any:
-        """Returns the position of a deposited item. The `Item` must have a
-        `added_icon` defined, otherwise a `ValueError` is raised."""
-        if item.added_icon is None:
-            raise ValueError(f"Undefined 'added_icon' for {item}!")
-
-        return self.window.locate_template(
-            item.added_icon, region=self.ITEM_ADDED_REGION, confidence=0.7
-        )
-
-    def turn_on(self) -> None:
-        """Turns the structure on, assumes it is already opened.
-
-        If the Structure cannot be turned on, a `NoGasolineError` is raised.
-        """
-        if self.is_turned_on():
-            return
-
-        if not self.is_turned_off():
-            raise NoGasolineError(self._name)
-
-        while self.is_turned_off():
-            self.click_at(964, 615, delay=0.3)
-            self.sleep(1)
-
-    def turn_off(self) -> None:
-        """Turns the structure off, assumes it is already opened."""
-        if self.is_turned_off():
-            return
-
-        while self.is_turned_on():
-            self.click_at(964, 615, delay=0.3)
-            self.sleep(1)
-
-    def is_turned_on(self) -> bool:
-        """Return whether the Structure is turned on."""
-        if not self._toggleable:
-            raise ValueError(f"{self} is not toggleable!")
-        return self.inventory.locate_button(
-            self.TURN_OFF, grayscale=True, confidence=0.85
-        )
-
-    def is_turned_off(self) -> bool:
-        """Return whether the Structure can be turned on."""
-        return self.inventory.locate_button(
-            self.TURN_ON, grayscale=True, confidence=0.85
-        )
 
     def _get_amount_deposited(self, item: Item) -> int:
         """Checks how much of the given item was deposited. This is achieved
@@ -177,7 +187,7 @@ class Structure(Ark):
         if item.added_text is None:
             raise ValueError(f"Undefined 'added_text' for {item}!")
 
-        if not (icon_pos := self.find_item_deposited(item)):
+        if not (icon_pos := self._find_item_deposited(item)):
             return None
 
         # compute name roi
@@ -212,3 +222,51 @@ class Structure(Ark):
             return "0"
 
         return filtered[:x]
+
+    def _find_item_deposited(self, item: Item) -> Any:
+        """Returns the position of a deposited item. The `Item` must have a
+        `added_icon` defined, otherwise a `ValueError` is raised."""
+        if item.added_icon is None:
+            raise ValueError(f"Undefined 'added_icon' for {item}!")
+
+        return self.window.locate_template(
+            item.added_icon, region=self._ITEM_ADDED_REGION, confidence=0.7
+        )
+
+    def turn_on(self) -> None:
+        """Turns the structure on, assumes it is already opened.
+
+        If the Structure cannot be turned on, a `NoGasolineError` is raised.
+        """
+        if self.is_turned_on():
+            return
+
+        if not self.is_turned_off():
+            raise NoGasolineError(self._name)
+
+        while self.is_turned_off():
+            self.click_at(964, 615, delay=0.3)
+            self.sleep(1)
+
+    def turn_off(self) -> None:
+        """Turns the structure off, assumes it is already opened."""
+        if self.is_turned_off():
+            return
+
+        while self.is_turned_on():
+            self.click_at(964, 615, delay=0.3)
+            self.sleep(1)
+
+    def is_turned_on(self) -> bool:
+        """Return whether the Structure is turned on."""
+        if not self._toggleable:
+            raise ValueError(f"{self} is not toggleable!")
+        return self.inventory.locate_button(
+            self.TURN_OFF, grayscale=True, confidence=0.85
+        )
+
+    def is_turned_off(self) -> bool:
+        """Return whether the Structure can be turned on."""
+        return self.inventory.locate_button(
+            self.TURN_ON, grayscale=True, confidence=0.85
+        )

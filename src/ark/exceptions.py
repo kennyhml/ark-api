@@ -50,6 +50,11 @@ class ReceivingRemoveInventoryTimeout(InventoryError):
 class NoItemsAddedError(InventoryError):
     """Raised when items were not added to the inventory if expected."""
 
+    def __init__(self, expected_item: str) -> None:
+        self.item = expected_item
+
+    def __str__(self) -> str:
+        return f"Expected item {self.item} was not added!"
 
 class NoItemsDepositedError(InventoryError):
     """Raised when the 'X items deposited.' message does not appear."""

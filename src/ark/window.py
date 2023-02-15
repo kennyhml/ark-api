@@ -311,7 +311,7 @@ class ArkWindow:
         center: Literal[False] = False,
     ) -> tuple[int, int, int, int] | None:
         ...
-        
+
     def locate_template(
         self,
         template: str,
@@ -367,18 +367,28 @@ class ArkWindow:
         return get_center(box) if box and center else box
 
     def locate_all_template(
-        self, template: str, region: tuple, confidence: float, convert: bool = True
+        self,
+        template: str,
+        region: tuple,
+        confidence: float,
+        convert: bool = True,
+        grayscale: bool = False,
     ):
         """Finds all locations of the given template on the screen."""
+
+        haystack: np.ndarray = np.asarray(self.grab_screen(region, convert=False))  # type: ignore[arg-type]
+        image_rgb = cv.cvtColor(haystack, cv.COLOR_BGR2RGB)
+        img = Image.fromarray(image_rgb)
         return self.filter_points(
             set(
-                pg.locateAllOnScreen(
+                pg.locateAll(
                     self.convert_image(template),
-                    region=self.convert_region(region) if convert else region,
+                    img,
                     confidence=confidence,
+                    grayscale=grayscale
                 )
             ),
-            min_dist=15,
+            min_dist=20,
         )
 
     def filter_points(self, targets, min_dist) -> set:

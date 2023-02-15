@@ -1,85 +1,103 @@
-"""
-Ark API module representing inventories in ark.
-The `Inventory` parent class contains methods that make it easy to derive other inventories.
-"""
-
 import math
 import time
-from typing import Literal, Optional
+from typing import Iterable, Literal, Optional, overload
 
 import pyautogui as pg  # type: ignore[import]
-import pydirectinput as input  # type: ignore[import]
 import win32clipboard  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import get_filepath
-from ...exceptions import (
-    InventoryNotAccessibleError,
-    InventoryNotClosableError,
-    ReceivingRemoveInventoryTimeout,
-)
+from ..._tools import await_event, get_filepath, timedout
+from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
+from ...exceptions import (InventoryNotAccessibleError,
+                           InventoryNotClosableError, NoItemsAddedError,
+                           ReceivingRemoveInventoryTimeout)
 from ...items import Item
 from .._button import Button
 
 
 class Inventory(Ark):
-    """Represents the ark inventory, inherits from `ArkBot`.
+    """Represents an inventory in Ark.
+
+    All `Structure` and `Dinosaur` objects contain an `Inventory` attribute,
+    it is responsible for all action related to transferring items, clicking
+    buttons within the inventory and using the searchbar.
+
+    For inventories that contain `craftables`, it also provides the methods
+    needed to use the crafting tab and craft requested items. Furthermore,
+    it is able to keep track and sync it's contents.
 
     Parameters:
     -----------
     entity :class:`str`:
         The name of the structure / dino the inventory belongs to
 
-    action_wheel_img :class:`str`:
-        The path to the action wheel image of the item
+    craftables :class:`list[Item]` [Optional]:
+        A list of items that can be crafted in the in the crafting tab
 
-    max_slots :class:`str`: [Optional]
+    capacity :class:`str`: [Optional]
         An image path containing the image of the max capacity.
 
-    TODO:
-    Make an action wheel class, reduce coupling a good amount.
+    Properties:
+    ----------
+    contents :class:`dict[Item, int]`:
+        A dictionary mapping items in the structure to their quantity
 
-    max_slots should be defined in a `Structure` rather than inventory
-    because shit like dinos doesnt have a max_slot so it doesnt make a
-    whole lot of sense despite being optional.
+    capacity :class:`int`:
+        The set maximum slots the inventory can hold
+
+    craftables :class:`list[Item]`:
+        A list of items that can be crafted in the inventories crafting tab.
     """
 
-    FOLDER_VIEW = Button((1663, 188), (1632, 158, 61, 56), "folder_view.png")
-    SHOW_ENGRAMS = Button((1716, 189), (1690, 160, 51, 51), "show_engrams.png")
-    UNL_ENGRAMS = Button((1770, 188), (1742, 160, 56, 54), "unlearned_engrams.png")
-    TRANSFER_ALL = Button((1425, 190))
-    DROP_ALL = Button((1477, 187))
-    CRAFTING_TAB = Button((1716, 118))
-    INVENTORY_TAB = Button((1322, 118), (1235, 88, 184, 60), )
-    CREATE_FOLDER = Button((1584, 187))
-
-    SEARCHBAR = (1300, 190)
-    ADDED_REGION = (40, 1020, 360, 60)
-    ITEM_REGION = (1230, 220, 580, 720)
-    FIRST_SLOT = (1292, 294)
     LAST_TRANSFER_ALL = time.time()
+    SLOTS = [
+        (x + 47, y + 47)
+        for y in range(232, 883, 93)
+        for x in range(1243, 1708 + 93, 93)
+    ]
+
+    _FOLDERS = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH"]
+
+    _FOLDER_VIEW = Button((1663, 188), (1632, 158, 61, 56), "folder_view.png")
+    _SHOW_ENGRAMS = Button((1716, 189), (1690, 160, 51, 51), "show_engrams.png")
+    _UNL_ENGRAMS = Button((1770, 188), (1742, 160, 56, 54), "unlearned_engrams.png")
+    _TRANSFER_ALL = Button((1425, 190))
+    _DROP_ALL = Button((1477, 187))
+    _CRAFTING_TAB = Button((1716, 118))
+    _INVENTORY_TAB = Button((1322, 118), (1235, 88, 184, 60), "inventory.png")
+    _CREATE_FOLDER = Button((1584, 187))
+    _SEARCHBAR = (1300, 190)
+    _ADDED_REGION = (40, 1020, 360, 60)
+    _ITEM_REGION = (1243, 232, 1708, 883)
+    _SLOTS_REGION = (1074, 500, 60, 23)
+    _REMOTE_INVENTORY = (1346, 563, 345, 43)
 
     def __init__(
         self,
         entity_name: str,
         craftables: Optional[list[Item]] = None,
-        max_slots: Optional[str | int] = None,
-
+        capacity: Optional[str | int] = None,
     ) -> None:
         super().__init__()
         self._name = entity_name
-        self._max_slots = max_slots
+        self._capacity = capacity
         self._craftables = craftables
-        if isinstance(max_slots, str):
-            self._max_slots = get_filepath(max_slots)
+        if isinstance(capacity, str):
+            self._capacity = get_filepath(capacity)
+
+        self._contents: dict[Item, int] = {}
 
     def __str__(self) -> str:
-        return f"Inventory of {self._name} with max slots {self._max_slots}"
+        return f"Inventory of {self._name} with max slots {self._capacity}"
 
     @property
-    def max_slots(self) -> int | str | None:
-        return self._max_slots
+    def contents(self) -> dict[Item, int]:
+        return self._contents
+
+    @property
+    def capacity(self) -> int | str | None:
+        return self._capacity
 
     @property
     def craftables(self) -> list[Item] | None:
@@ -92,73 +110,194 @@ class Inventory(Ark):
             is not None
         )
 
-    def click_drop_all(self) -> None:
-        """Clicks the drop all button at the classes drop all position"""
-        self.click_at(self.DROP_ALL, delay=0.2)
+    def is_open(self) -> bool:
+        """Checks if the inventory is open."""
+        return self.locate_button(self._INVENTORY_TAB, confidence=0.8)
 
-    def click_transfer_all(self) -> None:
-        """Clicks the transfer all button at the classes transfer all position"""
-        while (time.time() - Inventory.LAST_TRANSFER_ALL) < 2:
-            self.sleep(0.1)
-        self.click_at(self.TRANSFER_ALL, delay=0.2)
-        Inventory.LAST_TRANSFER_ALL = time.time()
+    def open(self, default_key: bool = True, max_duration: int = 10) -> None:
+        """Opens the inventory using the 'target inventory' keybind by default.
 
-    def open_craft(self) -> None:
-        """Opens the crafting tab assuming the inventory is already open"""
-        self.click_at(self.CRAFTING_tab, delay=0.3)
+        Set `default_key` to `False` to use 'E' instead, which will allow to access
+        entities in weird spots.
 
-    def close_craft(self) -> None:
-        """Opens the inventory tab assuming the inventory is already open"""
-        self.click_at(self.INVENTORY_TAB, delay=0.3)
+        Beware that using the non-default key regularly is not recommended.
 
-    def drop_all_items(self, item: Item | str) -> None:
-        """Searches for the given item and drops all of it"""
-        self.search_for(item)
-        self.click_drop_all()
+        Raises:
+        ----------
+        `InventoryNotAccessibleError`
+            If the inventory could not be opened within the max duration
+        """
+        attempts = 0
+        while not self.is_open():
+            attempts += 1
 
-    def select_first_slot(self) -> None:
-        """Moves to the first slot"""
-        self.move_to(*self.FIRST_SLOT)
+            key = self.keybinds.target_inventory if default_key else self.keybinds.use
+            self.press(key)
 
-    def popcorn(self, item: Item) -> None:
-        """Searches for the given item and popcorns it until there is none left."""
-        self.search_for(item)
-        self.select_first_slot()
-        while self.has_item(item):
-            self.press("o")
+            if await_event(self.is_open, max_duration=INVENTORY_OPEN_INTERVAL):
+                break
 
-    def count_item(self, item: Item) -> int:
+            if (max_duration / INVENTORY_OPEN_INTERVAL) > attempts:
+                raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
+        self._await_receiving_remove_inventory()
+
+    def close(self) -> None:
+        """Closes the inventory using the 'target inventory' keybind.
+
+        Raises:
+        ----------
+        `InventoryNotClosableError` if the inventory did not close
+        within 30 seconds, indicating a server / game crash.
+        """
+        attempts = 0
+        while self.is_open():
+            attempts += 1
+
+            self.press(self.keybinds.target_inventory)
+            if await_event(self.is_open, False, max_duration=INVENTORY_CLOSE_INTERVAL):
+                break
+
+            if attempts >= 6:
+                raise InventoryNotClosableError(f"Failed to close {self._name}!")
+
+    def search(self, item: Item | str, delete_prior: bool = True) -> None:
+        """Searches for an item or word in the searchbar. Then presses
+        escape to tab back out of the spacebar.
+
+        Parameters
+        ----------
+        items :class:`Item | str`:
+            The item or term to search for
+        """
+        self._click_searchbar(delete_prior)
+        # lowercasing the term because pyautogui has a weird gist where it will
+        # actually use shift + letter to capitalize it, which opens the chat somehow
+        if isinstance(item, str):
+            pg.typewrite(item.lower(), interval=0.001)
+        else:
+            pg.typewrite(item.search_name.lower(), interval=0.001)
+        # escape out of the searchbar so presing f closes the inventory
+        self.press("esc")
+
+    def drop_all(self, items: Optional[Iterable[Item | str]] = None) -> None:
+        """Searches for an iterable of Items or words and drops all. If no
+        items are passed, it simply drops without searching for anything.
+
+        Parameters
+        ----------
+        items :class:`Iterable[Item | str]`: [Optional]
+            An iterable of items to search for, then drop
+        """
+        if items is None:
+            self.click_at(self._DROP_ALL.location)
+            return
+
+        # already know someone isnt gonna check the typehints and pass
+        # an item or string on its own :D
+        if not isinstance(items, Iterable):
+            items = {items}
+        else:
+            items = set(items)
+
+        for item in items:
+            self.search(item)
+            self.click_at(self._DROP_ALL.location)
+
+    def transfer_all(self, items: Optional[Iterable[Item | str]] = None) -> None:
+        """Searches for an iterable of Items or words and transfers all. If no
+        items are passed, it simply transfers all without searching for anything.
+
+        Parameters
+        ----------
+        items :class:`Iterable[Item | str]`: [Optional]
+            An iterable of items to search for, then transfer
+        """
+
+        def press_button() -> None:
+            while (time.time() - self.LAST_TRANSFER_ALL) < 2:
+                self.sleep(0.1)
+
+            self.click_at(self._TRANSFER_ALL.location, delay=0.2)
+            Inventory.LAST_TRANSFER_ALL = time.time()
+
+        if items is None:
+            press_button()
+            return
+
+        # already know someone isnt gonna check the typehints and pass
+        # an item or string on its own :D
+        if isinstance(items, (str, Item)):
+            items = {items}
+        else:
+            items = set(items)
+
+        for item in items:
+            self.search(item)
+            press_button()
+
+    def open_tab(self, tab: Literal["inventory", "crafting"]) -> None:
+        """Opens the requested tab, either the inventory or crafting. Ensures
+        the inventory is open before doing so to avoid punching.
+
+        Parameters
+        ----------
+        tab :class:`Literal["inventory", "crafting"]`:
+            The tab to open
+        """
+        if tab == "crafting":
+            self.click_at(self._CRAFTING_TAB.location, delay=0.3)
+        elif tab == "inventory":
+            self.click_at(self._INVENTORY_TAB.location, delay=0.3)
+        else:
+            raise ValueError(f"Expected one of ['inventory', 'crafting'], got {tab}")
+
+    def drop(self, item: Item) -> None:
+        """Searches for the given item and popcorns it until there is none left.
+
+        Parameters
+        ----------
+        item :class:`Item`:
+            The item to be popcorned
+        """
+        self.search(item)
+        while position := self.find(item):
+            self.move_to(position)
+            self.press(self.keybinds.drop)
+
+    def count(self, item: Item) -> int:
         """Returns the amount of stacks of the given item located within the inventory."""
         return len(
             self.window.locate_all_template(
-                item.inventory_icon, region=self.ITEM_REGION, confidence=0.8
+                item.inventory_icon,
+                region=self._ITEM_REGION,
+                confidence=0.85,
+                grayscale=True,
             )
         )
 
-    def find_item(self, item: Item) -> tuple | None:
-        """Returns the position of the given item within the inventory."""
+    def find(self, item: Item) -> tuple[int, int] | None:
+        """Returns the position of the given item within the inventory.
+
+        Beware that the item is grayscaled to make it compatible
+        across qualities.
+
+        Parameters:
+        ------------
+        item :class:`Item`:
+            The item object of the item to check for
+        """
         return self.window.locate_template(
-            item.inventory_icon, region=self.ITEM_REGION, confidence=0.8
+            item.inventory_icon,
+            region=self._ITEM_REGION,
+            confidence=0.85,
+            center=True,
+            grayscale=True,
         )
 
-    def item_added(self) -> bool:
-        """Checks if an item was added by matching for the added template"""
-        return self.window.locate_template(
-            f"templates/added.png", region=self.ADDED_REGION, confidence=0.7
-        )
+    def has(self, item: Item) -> bool:
+        """Returns whether the player inventory has an item.
 
-    def is_open(self) -> bool:
-        """Checks if the inventory is open."""
-        return (
-            self.window.locate_template(
-                "templates/inventory.png", region=self.INVENTORY_REGION, confidence=0.8
-            )
-            is not None
-        )
-
-    def has_item(self, item: Item) -> bool:
-        """Checks if the player inventory has the passed item.
-        Beware that we grayscale the item to make it compatible
+        Beware that the item is grayscaled to make it compatible
         across qualities.
 
         Parameters:
@@ -168,42 +307,17 @@ class Inventory(Ark):
 
         Returns whether the item is in the inventory or not.
         """
-        return (
-            self.window.locate_template(
-                item.inventory_icon,
-                region=self.ITEM_REGION,
-                confidence=0.8,
-                grayscale=True,
-            )
-            is not None
-        )
+        return self.find(item) is not None
 
-    def search_for(self, item: Item | str) -> None:
-        """Searches for a term in the target inventory using pyautogui typewrite"""
-        # write the name into the search bar
-        if isinstance(item, str):
-            self.click_search()
-            pg.typewrite(item, interval=0.001)
-        else:
-            self.click_search(delete_prior=item.search_name != "trap")
-            pg.typewrite(item.search_name.lower(), interval=0.001)
+    @overload
+    def take(self, item: Item, *, amount: int) -> None:
+        ...
 
-        # escape out of the searchbar so presing f closes the inventory
-        self.press("esc")
+    @overload
+    def take(self, item: Item, *, stacks: int) -> None:
+        ...
 
-    def take_all_items(self, item: Item) -> None:
-        """Searches the given item and takes all.
-
-        Parameters:
-        -----------
-        item :class:`Item`:
-            The item object to search for
-        """
-        # search for the item and hit take all
-        self.search_for(item)
-        self.click_transfer_all()
-
-    def take_one_item(self, item: Item, slot: int) -> None:
+    def take(self, item: Item, *, stacks: int = 0, amount: int = 1) -> None:
         """Searches the given item and takes one.
 
         Parameters:
@@ -211,64 +325,57 @@ class Inventory(Ark):
         item :class:`Item`:
             The item object to search for
 
+        stacks :class:`int`:
+            The amount of stacks to take of the item
+
         slot :class:`int`:
             The slot to take from (in case the inventory has a folder)
             either 1 or 2
+
+        Raises:
+        -------
+        `NoItemsAddedError`
+            When a stack could not be transferred within 30 seconds after
+            pressing 'T'
+
         """
         # search for the item and hit take all
-        self.search_for(item)
+        self.search(item)
         self.sleep(0.2)
 
-        slots = {1: (1288, 285), 2: (1384, 281)}
-        self.move_to(*slots[slot])
-        pg.doubleClick(button="left", interval=0.2)
+        # take a specific quantity of a stack
+        if not stacks:
+            pos = self.find(item)
+            if pos is None:
+                return
+            self.click_at(pos)
 
-    def craft(self, item: Item, amount: int) -> None:
-        """Crafts the given amount of the given item. Spams 'A' if
-        there is more than 50 to craft.
-        """
-        self.search_for(item)
-        self.click_at(1294, 290, delay=1)
-
-        if amount < 50:
             for _ in range(amount):
-                self.press("e")
-                self.sleep(0.3)
+                pg.click(clicks=2)
+
             return
 
-        for _ in range(math.ceil(amount / 100)):
-            self.press("a")
-            self.sleep(0.5)
+        # take stacks only, using T-transfers
+        for stack in range(stacks):
+            if (pos := self.find(item)) is None:
+                return
 
-    def get_slots(self) -> int:
-        """Attempts to OCR the amount of slots occupied in the structure.
-        Returns 0 upon failure.
-        """
-        slots = self.window.grab_screen((1090, 503, 41, 15))
-        masked = self.window.denoise_text(
-            slots, (251, 227, 124), variance=30, upscale=True, upscale_by=3
-        )
-        result = tes.image_to_string(
-            masked,
-            config="-c tessedit_char_whitelist=0123456789/ --psm 7 -l eng",
-        ).rstrip()
-        print(result)
-        if not result:
-            return 0
+            before_take = self.count(item)
+            if not stack:
+                self.click_at(pos)
 
-        if result[-1] == "/":
-            result = result[:-1].replace("/", "7")
+            self.press("t")
+            start = time.time()
+            while before_take == self.count(item):
+                self.sleep(0.05)
+                if timedout(start, 30):
+                    raise NoItemsAddedError(item.name)
 
-        # replace mistaken "0"s, strip off newlines
-        return result.replace("O", "0") or 0
-
-    def get_stack_index(self) -> int:
+    def get_folder_index(self) -> int:
         """Returns the number of the crop plot in the stack by checking for
         the folder name from AAA to HHH, being 1 to 9."""
-
-        options = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH"]
         for _ in range(3):
-            for index, option in enumerate(options, start=1):
+            for index, option in enumerate(self._FOLDERS, start=1):
                 if self.window.locate_template(
                     f"templates/folder_{option}.png",
                     region=(1240, 290, 55, 34),
@@ -276,8 +383,7 @@ class Inventory(Ark):
                 ):
                     return index
             self.sleep(0.5)
-
-        raise Exception("Index not determined")
+        raise LookupError("Folder index not found!")
 
     def create_folder(self, name: str) -> None:
         """Creates a folder in the inventory at the classes folder button"""
@@ -294,74 +400,85 @@ class Inventory(Ark):
         self.sleep(0.5)
         self.click("left")
 
+    def craft(self, item: Item, amount: int) -> None:
+        """Crafts the given amount of the given item. Spams 'A' if
+        there is more than 50 to craft.
+        """
+        self.search(item)
+        self.click_at(1294, 290, delay=1)
+
+        if amount < 50:
+            for _ in range(amount):
+                self.press("e")
+                self.sleep(0.3)
+            return
+
+        for _ in range(math.ceil(amount / 100)):
+            self.press("a")
+            self.sleep(0.5)
+
+    def get_slots(self) -> int:
+        """Attempts to OCR the amount of slots occupied in the structure.
+        Returns the OCR'd amount as an integer, otherwise -1 on failure.
+        """
+        slots = self.window.grab_screen((1090, 503, 31, 15))
+        masked = self.window.denoise_text(
+            slots, (251, 227, 124), variance=27, dilate=False
+        )
+        result: str = tes.image_to_string(
+            masked, config="-c tessedit_char_whitelist=0123456789lIWVSi --psm 10 -l eng"
+        ).rstrip()
+        if not result:
+            return -1
+        to_replace = {
+            "/": "7",
+            "l": "1",
+            "I": "1",
+            "W": "11",
+            "V": "1",
+            "i": "1",
+            "S": "5",
+        }
+        for k, v in to_replace.items():
+            result = result.replace(k, v)
+
+        # replace mistaken "0"s, strip off newlines
+        return int(result.replace("O", "0")) or -1
+
     def is_full(self) -> bool:
         """Checks if the vault is full, raises an `AttributeError` if no
         max slot image path was defined."""
-        if not self._max_slots_img:
+        if self._capacity is None:
             raise AttributeError(
-                f"You need to define a 'max_slot_img' for '{self._name}' in order to use this method."
+                f"Unabled to check slots, missing 'capacity' for '{self._name}'"
             )
+
+        if isinstance(self._capacity, str):
+            return (
+                self.window.locate_template(
+                    self._capacity, region=self._SLOTS_REGION, confidence=0.9
+                )
+                is not None
+            )
+        return self._capacity - 5 <= self.get_slots() <= self._capacity
+
+    def received_item(self) -> bool:
+        """Checks if an item was added by matching for the added template"""
         return (
             self.window.locate_template(
-                self._max_slots_img, region=(1074, 500, 60, 23), confidence=0.9
+                f"{self.PKG_DIR}/assets/templates/added.png",
+                region=self._ADDED_REGION,
+                confidence=0.7,
             )
             is not None
         )
 
-    def receiving_remote_inventory(self) -> bool:
-        """Checks if the 'Receiving Remote Inventory' text is visible."""
-        return (
-            self.window.locate_template(
-                "templates/remote_inventory.png",
-                region=(1346, 563, 345, 43),
-                confidence=0.8,
-            )
-            is not None
-        )
-
-    def get_transferred_frame(
-        self, item: Item, mode: Literal["rm", "add"] = "rm"
-    ) -> tuple[int, int, int, int] | None:
-        if not item.added_icon:
-            raise Exception
-
-        ytrap_position = self.window.locate_template(
-            item.added_icon, region=(0, 970, 160, 350), confidence=0.7
-        )
-
-        if not ytrap_position:
-            return None
-
-        # get our region of interest
-        text_start_x = ytrap_position[0] + ytrap_position[2]
-        if mode == "rm":
-            text_end = text_start_x + self.window.convert_width(130), ytrap_position[1]
-        else:
-            text_end = text_start_x + self.window.convert_width(95), ytrap_position[1]
-
-        roi = (
-            *text_end,
-            self.window.convert_width(290),
-            self.window.convert_height(25),
-        )
-
-        if not item.added_text:
-            raise Exception(f"You did not define an 'added_text' for {item}!")
-
-        # find the items name to crop out the numbers
-        name_text = self.window.locate_template(
-            item.added_text, region=roi, confidence=0.7, convert=False
-        )
-        if not name_text:
-            return None
-
-        # get our region of interest (from end of "Removed:" to start of "Element")
-        roi = (
-            *text_end,
-            self.window.convert_width(int(name_text[0] - text_end[0])),
-            self.window.convert_height(25),
-        )
-        return roi
+    def delete_search(self) -> None:
+        """Deletes the last term in the searchbar by selecting all of it,
+        deleting it with backspace and then escaping out."""
+        self._click_searchbar(delete_prior=True)
+        self.press("backspace")
+        self.press("esc")
 
     def get_amount_transferred(
         self, item: Item, mode: Literal["rm", "add"] = "rm"
@@ -370,7 +487,7 @@ class Inventory(Ark):
         amount on the lefthand side of the screen."""
         # prepare the image
         for _ in range(10):
-            roi = self.get_transferred_frame(item, mode)
+            roi = self._get_transferred_frame(item, mode)
             if roi:
                 break
             self.sleep(0.1)
@@ -383,11 +500,10 @@ class Inventory(Ark):
             img, denoise_rgb=(255, 255, 255), variance=10, upscale=True, upscale_by=3
         )
         # get the raw tesseract result
-        raw_result = tes.image_to_string(
+        raw_result: str = tes.image_to_string(
             img,
             config="-c tessedit_char_whitelist='0123456789liIxObL ' --psm 7 -l eng",
         )
-
         try:
             # replace all the mistaken "1"s
             for char in ["I", "l", "i", "b", "L"]:
@@ -401,11 +517,53 @@ class Inventory(Ark):
             if x == -1 or not filtered or filtered == "x":
                 return 0
             return int(filtered[:x])
-
         except:
             return 0
 
-    def await_receiving_remove_inventory(self) -> None:
+    def _get_transferred_frame(
+        self, item: Item, mode: Literal["rm", "add"] = "rm"
+    ) -> tuple[int, int, int, int] | None:
+        if not item.added_icon:
+            raise AttributeError("Cant find transferred frame without 'added_icon'")
+
+        icon_pos = self.window.locate_template(
+            item.added_icon, region=(0, 970, 160, 350), confidence=0.7
+        )
+        if icon_pos is None:
+            return None
+
+        # get our region of interest
+        text_start_x = icon_pos[0] + icon_pos[2]
+
+        if mode == "rm":
+            text_end = text_start_x + self.window.convert_width(130), icon_pos[1]
+        else:
+            text_end = text_start_x + self.window.convert_width(95), icon_pos[1]
+
+        roi = (
+            *text_end,
+            self.window.convert_width(290),
+            self.window.convert_height(25),
+        )
+
+        if item.added_text is None:
+            raise AttributeError(f"You did not define an 'added_text' for {item}!")
+
+        # find the items name to crop out the numbers
+        name_text = self.window.locate_template(
+            item.added_text, region=roi, confidence=0.7, convert=False
+        )
+        if name_text is None:
+            return None
+
+        # get our region of interest (from end of "Removed:" to start of "Item")
+        return (
+            *text_end,
+            self.window.convert_width(int(name_text[0] - text_end[0])),
+            self.window.convert_height(25),
+        )
+
+    def _await_receiving_remove_inventory(self) -> None:
         """Waits until 'Receiving Remote Inventory' disappears.
 
         Raises:
@@ -414,7 +572,7 @@ class Inventory(Ark):
         seconds, usually indicating a server crash.
         """
         c = 0
-        while self.receiving_remote_inventory():
+        while self._receiving_remote_inventory():
             self.sleep(0.1)
             c += 1
             if c > 300:
@@ -422,126 +580,43 @@ class Inventory(Ark):
                     "Timed out waiting to receive remote inventory!"
                 )
 
-    def await_open(self) -> bool:
-        """Waits for the inventory to be open, for time efficiency.
-
-        Returns `True` if the inventory opened within 5 second else `False`
-        """
-        c = 0
-        while not self.is_open():
-            self.sleep(0.1)
-            c += 1
-            if c > 40:
-                return False
-        return True
-
-    def await_closed(self) -> bool:
-        """Waits for the inventory to be closed, for time efficiency.
-
-        Returns `True` if the inventory closed within 5 second else `False`
-        """
-        c = 0
-        while self.is_open():
-            c += 1
-            self.sleep(0.1)
-            if c > 40:
-                return False
-        return True
-
-    def in_access_range(self) -> bool:
-        """Uses the action wheel to check if a structure or dinosaur is within
-        access range to determine if we are unable to open it because of lag or
-        if we are just not looking at it. Useful for time efficiency on crop plots.
-
-        Returns `True` if the action wheel displays the structure / dinos name.
-        """
-        with pg.hold("e"):
-            self.sleep(1)
-            return (
-                self.window.locate_template(
-                    f"templates/{self._action_wheel_img}.png",
-                    region=(840, 425, 240, 230),
-                    confidence=0.7,
-                )
-                is not None
-            )
-
-    def open(self, default_key: bool = True) -> None:
-        """Opens the inventory using the 'target inventory' keybind.
-
-        If the inventory did not opened within 5 seconds, it will use the
-        action wheel to determine if we are able to open it.
-
-        Raises:
-        ----------
-        `InventoryNotAccessibleError` if the structure / dino name does not
-        appear in the action wheel upon checking or if the inventory just cannot
-        be opened after 30 seconds, indicating a server or game crash.
-
-        """
-        c = 0
-        while not self.is_open():
-            c += 1
-            # wait for 1s if the crop plot opens
-            self.press(
-                self.keybinds.target_inventory if default_key else self.keybinds.use
-            )
-            if self.await_open():
-                break
-
-            # 10 seconds passed, check if we can access it at all
-            if c == 2:
-                if not self.in_access_range():
-                    raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
-
-            if c >= 12:
-                raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
-
-        self.await_receiving_remove_inventory()
-
-    def close(self) -> None:
-        """Closes the inventory using the 'target inventory' keybind.
-
-        Raises:
-        ----------
-        `InventoryNotClosableError` if the inventory did not close
-        within 30 seconds, indicating a server / game crash.
-        """
-        c = 0
-        while self.is_open():
-            c += 1
-            self.press(self.keybinds.target_inventory)
-            if self.await_closed():
-                break
-
-            if c >= 6:
-                raise InventoryNotClosableError(f"Failed to close {self._name}!")
-        self.sleep(0.3)
-
-    def click_search(self, delete_prior: bool = True) -> None:
+    def _click_searchbar(self, delete_prior: bool = True) -> None:
         """Clicks into the searchbar"""
-        self.click_at(self.SEARCHBAR)
+        self.click_at(self._SEARCHBAR)
         if not delete_prior:
             return
 
-        input.keyDown("ctrl")
-        self.sleep(0.1)
-        input.press("a")
-        input.keyUp("ctrl")
+        with pg.hold("ctrl"):
+            pg.press("a")
 
-    def delete_search(self) -> None:
-        """Deletes the search"""
-        self.click_search(delete_prior=True)
-        self.press("backspace")
-        self.press("esc")
+    def _select_slot(self, idx: int = 0) -> None:
+        """Moves to the first slot"""
+        self.move_to(self.SLOTS[idx])
 
-    def can_craft(self, item: Item) -> bool:
+    def _receiving_remote_inventory(self) -> bool:
+        """Checks if the 'Receiving Remote Inventory' text is visible."""
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/remote_inventory.png",
+                region=self._REMOTE_INVENTORY,
+                confidence=0.8,
+            )
+            is not None
+        )
+
+    def _has_engram(self, item: Item) -> bool:
         """Checks if the given item can be crafted."""
-        self.search_for(item)
+        if self._craftables is None:
+            raise AttributeError("Unexpected call, `craftables` is `None`.")
+
+        if item not in self._craftables:
+            raise ValueError(f"'{item.name}' is not part of '{self._name}' craftables!")
+
+        self.search(item)
         self.sleep(0.5)
         return (
             self.window.locate_template(
-                item.inventory_icon, self.ITEM_REGION, confidence=0.75
+                item.inventory_icon, self._ITEM_REGION, confidence=0.8
             )
             is not None
         )

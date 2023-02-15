@@ -84,9 +84,9 @@ def await_event(
     counter = 0
     while not func() == expected_return_value:
         counter += 1
-        sleep(0.1)
+        sleep(0.05)
 
-        if (counter / 10) > max_duration:
+        if (counter / 20) > max_duration:
             return False
     return True
 
