@@ -1,3 +1,4 @@
+from .bed import Bed
 from .chemistry_bench import ChemistryBench
 from .dedicated_storage import TekDedicatedStorage
 from .industrial_forge import IndustrialForge
@@ -10,4 +11,5 @@ __all__ = (
     "IndustrialGrinder",
     "ChemistryBench",
     "IndustrialForge",
+    "Bed"
 )

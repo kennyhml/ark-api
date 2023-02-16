@@ -2,6 +2,7 @@ import pyautogui as pg  # type: ignore[import]
 
 from .._ark import Ark
 
+
 class Console(Ark):
     def is_open(self):
         """Checks if the console is open by matching the black par"""

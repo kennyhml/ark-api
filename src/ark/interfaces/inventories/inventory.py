@@ -6,12 +6,15 @@ import pyautogui as pg  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import (await_event, get_center, get_filepath, set_clipboard,
-                       timedout)
+from ..._tools import await_event, get_center, get_filepath, set_clipboard, timedout
 from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
-from ...exceptions import (InventoryNotAccessibleError,
-                           InventoryNotClosableError, InventoryNotOpenError,
-                           NoItemsAddedError, ReceivingRemoveInventoryTimeout)
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    InventoryNotClosableError,
+    InventoryNotOpenError,
+    NoItemsAddedError,
+    ReceivingRemoveInventoryTimeout,
+)
 from ...items import Item
 from .._button import Button
 
@@ -69,6 +72,7 @@ class Inventory(Ark):
     _SEARCHBAR = (1300, 190)
     _ADDED_REGION = (40, 1020, 360, 60)
     _ITEM_REGION = (1243, 232, 1708, 883)
+    _UPPER_ITEM_REGION = (1240, 230, 568, 191)
     _SLOTS_REGION = (1074, 500, 60, 23)
     _REMOTE_INVENTORY = (1346, 563, 345, 43)
 
@@ -159,7 +163,8 @@ class Inventory(Ark):
 
             if attempts >= 6:
                 raise InventoryNotClosableError(f"Failed to close {self._name}!")
-
+        self.sleep(0.3)
+        
     @overload
     def scroll(self, way: Literal["up", "down"], *, rows: int = 1) -> None:
         ...
@@ -304,7 +309,7 @@ class Inventory(Ark):
             raise ValueError(f"Expected one of ['inventory', 'crafting'], got {tab}")
 
     @final
-    def drop(self, item: Item) -> None:
+    def drop(self, item: Item, search: bool = True) -> None:
         """Searches for the given item and popcorns it until there is none left.
 
         Parameters
@@ -312,8 +317,13 @@ class Inventory(Ark):
         item :class:`Item`:
             The item to be popcorned
         """
-        self.search(item)
-        while position := self.find(item):
+        if not self.is_open():
+            raise InventoryNotOpenError
+
+        if search:
+            self.search(item)
+
+        while position := self.find(item, is_searched=search):
             self.move_to(position)
             self.press(self.keybinds.drop)
 
@@ -330,7 +340,7 @@ class Inventory(Ark):
         )
 
     @final
-    def find(self, item: Item) -> tuple[int, int] | None:
+    def find(self, item: Item, is_searched: bool = False) -> tuple[int, int] | None:
         """Returns the position of the given item within the inventory.
 
         Beware that the item is grayscaled to make it compatible
@@ -343,14 +353,14 @@ class Inventory(Ark):
         """
         return self.window.locate_template(
             item.inventory_icon,
-            region=self._ITEM_REGION,
+            region=self._UPPER_ITEM_REGION if is_searched else self._ITEM_REGION,
             confidence=0.85,
             center=True,
             grayscale=True,
         )
 
     @final
-    def has(self, item: Item) -> bool:
+    def has(self, item: Item, is_searched: bool = False) -> bool:
         """Returns whether the player inventory has an item.
 
         Beware that the item is grayscaled to make it compatible
@@ -363,7 +373,7 @@ class Inventory(Ark):
 
         Returns whether the item is in the inventory or not.
         """
-        return self.find(item) is not None
+        return self.find(item, is_searched) is not None
 
     @overload
     def take(self, item: Item, *, amount: int) -> None:
@@ -384,10 +394,6 @@ class Inventory(Ark):
 
         stacks :class:`int`:
             The amount of stacks to take of the item
-
-        slot :class:`int`:
-            The slot to take from (in case the inventory has a folder)
-            either 1 or 2
 
         Raises:
         -------

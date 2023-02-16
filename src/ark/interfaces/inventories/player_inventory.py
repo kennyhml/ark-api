@@ -34,6 +34,7 @@ class PlayerInventory(Inventory):
     _SEARCHBAR = (180, 180)
     _ADDED_REGION = (10, 1000, 220, 80)
     _ITEM_REGION = (117, 232, 582, 883)
+    _UPPER_ITEM_REGION = (117, 230, 568, 191)
 
     def __init__(self):
         super().__init__("Player")

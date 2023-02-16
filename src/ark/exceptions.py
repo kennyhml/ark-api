@@ -29,8 +29,27 @@ class UnexpectedWheelError(WheelError):
         return f"Unexpected wheel accessed. Expected '{self.expected_wheel}', got '{self.got_wheel}'!"
 
 
-class InventoryError(TimeoutError):
+class InterfaceError(Exception):
+    """Base class for all interface exceptions"""
+
+class BedNotAccessibleError(InterfaceError):
+    """Raised when the bed map could not be opened."""
+
+
+class BedNotFoundError(InterfaceError):
+    """Raised when the bed map could not be opened."""
+
+
+
+
+
+
+class InventoryError(InterfaceError):
     """Base class for all inventory exceptions"""
+
+
+
+
 
 
 class InventoryNotOpenError(InventoryError):
@@ -50,7 +69,6 @@ class InventoryNotAccessibleError(InventoryError):
 
 class InventoryNotClosableError(InventoryError):
     """Raised when the inventory cannot be closed"""
-
 
 
 
@@ -79,11 +97,6 @@ class NoGasolineError(InventoryError):
 
     def __str__(self) -> str:
         return f"{self.structure} is out of gasoline!"
-
-
-class BedNotAccessibleError(Exception):
-    """Raised when the bed map could not be opened."""
-
 
 class PlayerError(Exception):
     """Base exception for all player errors"""

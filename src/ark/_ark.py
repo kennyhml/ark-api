@@ -62,12 +62,12 @@ class Ark:
     @state_checker
     def press(self, key: str) -> None:
         """Presses the given key"""
-        if key not in ["mouse4", "mouse5"]:
+        if key not in ["ThumbMouseButton2", "Gamepad_RightThumbstick"]:
             pg.press(key.lower())
             return
 
         # use pynputs Controller to emulate side mouse button presses
-        self.mouse.click(Button.x1 if key == "mouse5" else Button.x2)
+        self.mouse.click(Button.x1 if key != "ThumbMouseButton2" else Button.x2)
 
     @state_checker
     def mouse_scroll(self, amount: int) -> None:
