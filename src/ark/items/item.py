@@ -1,9 +1,9 @@
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 
 from .._tools import get_filepath
+
 
 @dataclass
 class Item:

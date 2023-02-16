@@ -1,7 +1,4 @@
-"""
-A module containing all exceptions raised in the ark API classes,
-Sorted after situation
-"""
+import inspect
 
 
 class TerminatedError(Exception):
@@ -31,8 +28,20 @@ class UnexpectedWheelError(WheelError):
     def __str__(self) -> str:
         return f"Unexpected wheel accessed. Expected '{self.expected_wheel}', got '{self.got_wheel}'!"
 
+
 class InventoryError(TimeoutError):
     """Base class for all inventory exceptions"""
+
+
+class InventoryNotOpenError(InventoryError):
+    """Raised when attempting an interaction within the
+    inventory when it is not open"""
+
+    def __init__(self) -> None:
+        self.action = inspect.stack()[1][3]
+        
+    def __str__(self) -> str:
+        return f"Attempted interaction '{self.action}' with closed inventory!"
 
 
 class InventoryNotAccessibleError(InventoryError):
@@ -41,6 +50,8 @@ class InventoryNotAccessibleError(InventoryError):
 
 class InventoryNotClosableError(InventoryError):
     """Raised when the inventory cannot be closed"""
+
+
 
 
 class ReceivingRemoveInventoryTimeout(InventoryError):
@@ -74,8 +85,14 @@ class BedNotAccessibleError(Exception):
     """Raised when the bed map could not be opened."""
 
 
-class PlayerDidntTravelError(Exception):
-    """Raised when the travel screen could not be detected."""
+class PlayerError(Exception):
+    """Base exception for all player errors"""
+
+class PlayerDidntSpawnError(PlayerError):
+    """Raised when the player could not spawn in"""
+
+class PlayerDidntTravelError(PlayerError):
+    """Raised when the travel screen could not be detected"""
 
 
 class LogsNotOpenedError(Exception):

@@ -1,11 +1,3 @@
-""""
-Part of the Ark API for tribelogs, contains common mistakes you want to replace
-with a corrected version as well as what terms to ignore (C4, Baby...).
-
-Just read (and use your brain).
-"""
-
-
 # common tesseract mistakes to account for in any tribelog messages
 # could use regex for it to make it more powerful
 CONTENTS_MAPPING = {

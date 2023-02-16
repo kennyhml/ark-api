@@ -3,18 +3,15 @@ import time
 from typing import Iterable, Literal, Optional, final, overload
 
 import pyautogui as pg  # type: ignore[import]
-import win32clipboard  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import await_event, get_filepath, timedout, set_clipboard
+from ..._tools import (await_event, get_center, get_filepath, set_clipboard,
+                       timedout)
 from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
-from ...exceptions import (
-    InventoryNotAccessibleError,
-    InventoryNotClosableError,
-    NoItemsAddedError,
-    ReceivingRemoveInventoryTimeout,
-)
+from ...exceptions import (InventoryNotAccessibleError,
+                           InventoryNotClosableError, InventoryNotOpenError,
+                           NoItemsAddedError, ReceivingRemoveInventoryTimeout)
 from ...items import Item
 from .._button import Button
 
@@ -55,9 +52,7 @@ class Inventory(Ark):
 
     LAST_TRANSFER_ALL = time.time()
     SLOTS = [
-        (x + 47, y + 47)
-        for y in range(232, 883, 93)
-        for x in range(1243, 1708 + 93, 93)
+        (x, y, 93, 93) for y in range(232, 883, 93) for x in range(1243, 1708 + 93, 93)
     ]
 
     _FOLDERS = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH"]
@@ -107,6 +102,7 @@ class Inventory(Ark):
     def craftables(self) -> list[Item] | None:
         return self._craftables
 
+    @final
     def locate_button(self, button: Button, **kwargs) -> bool:
         assert button.template is not None and button.region is not None
         return (
@@ -164,10 +160,42 @@ class Inventory(Ark):
             if attempts >= 6:
                 raise InventoryNotClosableError(f"Failed to close {self._name}!")
 
+    @overload
+    def scroll(self, way: Literal["up", "down"], *, rows: int = 1) -> None:
+        ...
+
+    @overload
+    def scroll(self, way: Literal["up", "down"], *, pages: int = 0) -> None:
+        ...
+
     @final
-    def scroll(self, direction: Literal["up", "down"] = "down", rows: int = 1) -> None:
+    def scroll(
+        self, way: Literal["up", "down"], *, rows: int = 1, pages: int = 0
+    ) -> None:
+        """Scrolls up or down the inventory by a given amount of rows or pages.
+
+        Parameters
+        ----------
+        way :class:`Literal["up", "down"]`:
+            The direction to scroll, either up or down.
+
+        rows :class:`int`:
+            The number of rows to scroll, default 1
+
+        pages :class:`int`:
+            Alternative to `rows`, scroll by page rather than row. 1 page = 7 rows.
+        """
+        if way not in ["up", "down"]:
+            raise ValueError(f'Expected one of {["up", "down"]}, got "{way}".')
+
+        if not self.is_open():
+            raise InventoryNotOpenError
+
+        if pages:
+            rows = pages * 7
+
         for _ in range(rows):
-            self.mouse_scroll(2.91 * (1 if direction == "up" else -1))
+            self.mouse_scroll(2.91 * (1 if way == "up" else -1))
 
     @final
     def search(self, item: Item | str, delete_prior: bool = True) -> None:
@@ -179,6 +207,9 @@ class Inventory(Ark):
         items :class:`Item | str`:
             The item or term to search for
         """
+        if not self.is_open():
+            raise InventoryNotOpenError
+
         self._click_searchbar(delete_prior)
         # lowercasing the term because pyautogui has a weird gist where it will
         # actually use shift + letter to capitalize it, which opens the chat somehow
@@ -199,6 +230,9 @@ class Inventory(Ark):
         items :class:`Iterable[Item | str]`: [Optional]
             An iterable of items to search for, then drop
         """
+        if not self.is_open():
+            raise InventoryNotOpenError
+
         if items is None:
             self.click_at(self._DROP_ALL.location)
             return
@@ -224,6 +258,8 @@ class Inventory(Ark):
         items :class:`Iterable[Item | str]`: [Optional]
             An iterable of items to search for, then transfer
         """
+        if not self.is_open():
+            raise InventoryNotOpenError
 
         def press_button() -> None:
             while (time.time() - self.LAST_TRANSFER_ALL) < 2:
@@ -257,6 +293,9 @@ class Inventory(Ark):
         tab :class:`Literal["inventory", "crafting"]`:
             The tab to open
         """
+        if not self.is_open():
+            raise InventoryNotOpenError
+
         if tab == "crafting":
             self.click_at(self._CRAFTING_TAB.location, delay=0.3)
         elif tab == "inventory":
@@ -381,13 +420,9 @@ class Inventory(Ark):
             before_take = self.count(item)
             if not stack:
                 self.click_at(pos)
-
             self.press("t")
-            start = time.time()
-            while before_take == self.count(item):
-                self.sleep(0.05)
-                if timedout(start, 30):
-                    raise NoItemsAddedError(item.name)
+
+            self._receive_stack(item, before_take)
 
     @overload
     def manage_view_option(
@@ -427,6 +462,9 @@ class Inventory(Ark):
                 f'Expected one of {["folder view", "show engrams", "unlearned engrams"]}, got {option}'
             )
 
+        if not self.is_open():
+            raise InventoryNotOpenError
+
         buttons = {
             "folder view": self._FOLDER_VIEW,
             "show engrams": self._SHOW_ENGRAMS,
@@ -439,6 +477,10 @@ class Inventory(Ark):
         if state != set_to:
             self.click_at(buttons[option].location)
         return None
+
+    def select_slot(self, idx: int = 0) -> None:
+        """Moves to the first slot"""
+        self.move_to(get_center(self.SLOTS[idx]))
 
     def get_folder_index(self) -> int:
         """Returns the number of the crop plot in the stack by checking for
@@ -456,6 +498,9 @@ class Inventory(Ark):
 
     def create_folder(self, name: str) -> None:
         """Creates a folder in the inventory at the classes folder button"""
+        if not self.is_open():
+            raise InventoryNotOpenError
+
         set_clipboard(name)
 
         self.click_at(1585, 187)
@@ -487,6 +532,9 @@ class Inventory(Ark):
         """Attempts to OCR the amount of slots occupied in the structure.
         Returns the OCR'd amount as an integer, otherwise -1 on failure.
         """
+        if not self.is_open():
+            raise InventoryNotOpenError
+
         slots = self.window.grab_screen((1090, 503, 31, 15))
         masked = self.window.denoise_text(
             slots, (251, 227, 124), variance=27, dilate=False
@@ -518,6 +566,8 @@ class Inventory(Ark):
             raise AttributeError(
                 f"Unabled to check slots, missing 'capacity' for '{self._name}'"
             )
+        if not self.is_open():
+            raise InventoryNotOpenError
 
         if isinstance(self._capacity, str):
             return (
@@ -542,9 +592,24 @@ class Inventory(Ark):
     def delete_search(self) -> None:
         """Deletes the last term in the searchbar by selecting all of it,
         deleting it with backspace and then escaping out."""
+        if not self.is_open():
+            raise InventoryNotOpenError
+
         self._click_searchbar(delete_prior=True)
         self.press("backspace")
         self.press("esc")
+
+    def transfer_top_row(self) -> None:
+        if not self.is_open():
+            raise InventoryNotOpenError
+
+        for idx, slot in enumerate(self.SLOTS, start=1):
+            pg.moveTo(get_center(slot))
+            self.press("t")
+            self.sleep(0.2)
+
+            if idx >= 6:
+                return
 
     def get_amount_transferred(
         self, item: Item, mode: Literal["rm", "add"] = "rm"
@@ -655,10 +720,6 @@ class Inventory(Ark):
         with pg.hold("ctrl"):
             pg.press("a")
 
-    def _select_slot(self, idx: int = 0) -> None:
-        """Moves to the first slot"""
-        self.move_to(self.SLOTS[idx])
-
     def _receiving_remote_inventory(self) -> bool:
         """Checks if the 'Receiving Remote Inventory' text is visible."""
         return (
@@ -686,3 +747,13 @@ class Inventory(Ark):
             )
             is not None
         )
+
+    def _receive_stack(self, item: Item, before: int) -> None:
+        start = time.time()
+
+        while self.count(item) == before:
+            self.sleep(0.05)
+            if timedout(start, 30):
+                raise NoItemsAddedError(item.name)
+
+        print(f"Receiving stack took {time.time() - start}")

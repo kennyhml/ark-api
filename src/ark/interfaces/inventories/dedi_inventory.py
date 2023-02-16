@@ -4,11 +4,10 @@ from .inventory import Inventory
 
 
 class DedicatedStorageInventory(Inventory):
-    """Represents the Dedicated Storage Box in ark.
+    """Represents the Dedicated Storage in Ark.
 
-    Contains dedi specific methods such as depositing.
-
-    TO-DO: Add methods for withdrawing.
+    Extends the abilities of a regular `Inventory` by providing control
+    over the additional buttons a dedicated storage adds to the interface.
     """
 
     _DEPOSIT_ALL = Button((962, 618))
@@ -20,7 +19,7 @@ class DedicatedStorageInventory(Inventory):
     _WITHDRAW_TEN = Button((962, 877))
 
     def __init__(self):
-        super().__init__("Tek Dedicated Storage", "dedi")
+        super().__init__("Tek Dedicated Storage", "assets/wheels/dedi.png")
 
     def deposit(self) -> None:
         self.click_at(self._DEPOSIT_ALL.location)

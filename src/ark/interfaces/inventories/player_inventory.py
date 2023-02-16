@@ -1,6 +1,3 @@
-"""
-Ark API module representing the players inventory.
-"""
 import math
 from typing import Optional, final
 
@@ -13,17 +10,19 @@ from .._button import Button
 from .inventory import Inventory
 
 
+@final
 class PlayerInventory(Inventory):
     """Represents the player inventory in ark.
 
-    Provides the ability to implement player inventory related actions
-    such as transferring items to other inventories.
-
-    Inherits from the `Inventory` class.
+    Extends the abiliy of a regular `Inventory` by adding methods
+    responsible for transferring items from the own inventory into
+    a target inventory, as well as adjusting the region boundaries
+    in order to apply the same methods to the player inventory that the
+    `Inventory` already provides.
     """
 
     SLOTS = [
-        (x + 47, y + 47) for y in range(232, 883, 93) for x in range(117, 582 + 93, 93)
+        (x, y, 93, 93) for y in range(232, 883, 93) for x in range(117, 582 + 93, 93)
     ]
 
     _CREATE_FOLDER = Button((513, 189))
@@ -60,17 +59,23 @@ class PlayerInventory(Inventory):
         if not await_event(self.received_item, max_duration=30):
             raise NoItemsAddedError(item.name if isinstance(item, Item) else item)
 
-    def transfer_amount(
-        self, item: Item, amount: int, target_inventory: Optional[Inventory] = None
+    def transfer(
+        self, item: Item, amount: int, target: Optional[Inventory] = None
     ) -> None:
-        """Transfers the amount of the given item into the target inventory.
-        If the amount divided by the item stacksize is greater than 40,
-        the amount transferred will be OCRd and validated, which is fairly accurate.
+        """Transfers an amount of an item into an inventory. The method used
+        to transfer the items depends on the amount of stacks that has to be
+        transferred, how many are already in the target inventory, and whether
+        a target inventory was given to begin with.
 
-        Else, after each transfer it checks how many stacks of the item are in the
-        target inventory and multiplies it by the item stacksize, which is very
-        accurate.
-        
+        If more than 40 stacks of items need to be transferred, additionally
+        to what is already within the target, or no target inventory was given,
+        it will simply iterate over the top row of items and OCR the amount
+        of items removed.
+
+        Otherwise, we can check on the amount of stacks in the target before
+        transferring and compare them to after, for each item. This way we can
+        accurately count the items transferred while being more lag proof.
+
         Parameters:
         -----------
         item :class:`str`:
@@ -80,89 +85,72 @@ class PlayerInventory(Inventory):
             The quantity of items to be transferred
 
         target_inventory :class:`Inventory`: [Optional]
-            The inventory to transfer the items to
+            The inventory to transfer the items to, required for stack transferring
         """
-        # make sure we dont transfer any other items
-        self.search_for(item)
+        self.search(item)
+        # round the amount to the next stacksize, i.e if 403 items are to
+        # be transferred, and the stacksize is 200, it will be rounded to 600
+        amount = int(math.ceil(amount / item.stack_size)) * item.stack_size
+        stacks = int(amount / item.stack_size)
+        rows = round(stacks / 6)
 
-        # get total row transfers, add a little buffer for lag (1.5 by default)
-        total_transfers = round(
-            (int(math.ceil(amount / 100.0)) * 100 / item.stack_size) / 6 * 2
-        )
-
-        count_by_stacks = (amount / item.stack_size) < 40
-        if count_by_stacks and target_inventory:
-            target_inventory.search_for(item)
-
-        transferred = 0
-        # transfer the items
-        for _ in range(total_transfers):
-            if not self.has_item(item):
-                return
-
-            for pos in [(167 + (i * 95), 282) for i in range(6)]:
-                pg.moveTo(pos)
-                pg.press("t")
-                self.sleep(0.2)
-
-                if count_by_stacks and target_inventory:
-                    transferred = target_inventory.count_item(item) * item.stack_size
-                else:
-                    # OCR the total amount transferred, None if undetermined
-                    transferred = self.get_amount_transferred(item, "rm")
-                    if not transferred:
-                        continue
-
-                # if the amount of items we transferred makes sense we can cancel
-                if amount <= transferred <= amount + 3000:
-                    return
-
-    def transfer_all(self, inventory: Inventory, item: Optional[Item | str] = None):
-        """Transfers all of the given item into the target inventory
-
-        Parameters:
-        -----------
-        inventory: :class:`Inventory`:
-            The inventory to receive the items
-
-        item: :class:`Item`:
-            The item to search for
-        """
-        if not inventory.is_open():
+        if rows > 7 or not target:
+            self._transfer_by_rows(item, rows)
             return
 
-        if item:
-            self.search_for(item)
-        self.click_transfer_all()
+        # search the item in the target so we can track how much we already
+        # transferred. Before that check that it actually has the slots free
+        # we need, if not we need to go back to doing it by row.
+        target.search(item)
+        if target.count(item) + (stacks > 42):
+            self._transfer_by_rows(item, rows)
+            return
 
-    def pellets_left_to_tranfer(self) -> bool:
-        """Checks if there are any pellets left to even transfer,
-        we wouldnt wanna waste time clicking empty slots RIGHT @SLEEPY!!?"""
-        return (
-            self.window.locate_template(
-                "assets/items/pellet.png",
-                region=(116, 700, 95, 90),
-                confidence=0.8,
-            )
-            is not None
-        )
+        self._transfer_by_stacks(item, stacks, target)
 
-    def take_pellets(self, transfer_back: int = 8) -> bool:
-        """Transfers some pellets into another inventory, likely a Gacha."""
-        # ensure we even have pellets to transfer
-        if not self.pellets_left_to_tranfer():
-            return False
+    def _transfer_by_stacks(self, item: Item, stacks: int, target: Inventory) -> None:
+        """Internal implementation of the stack transferring technique.
+        
+        Counts the amount of items before pressing 'T' and waits for it to
+        change after the press.
+        """
+        amount = item.stack_size * 6
 
-        # start transferring pellets, keep track of rows
-        self.click_at(167, 745)
-        rows = 0
-        for _ in range(transfer_back):
-            for i in range(6):
-                self.move_to(167 + (i * 95), 745)
-                pg.press("t")
+        for _ in range(stacks):
+            slot = self.find(item)
+            if slot is None:
+                return
 
-            rows += 1
-            # check again if we ran out of pellets yet
-            if not self.pellets_left_to_tranfer():
-                break
-        return True
+            pg.moveTo(slot)
+            before = target.count(item)
+            self.press("t")
+
+            target._receive_stack(item, before)
+            transferred = target.count(item) * item.stack_size
+
+            print(f"Transferred {transferred}/{amount}...")
+            if amount <= transferred <= amount + 3000:
+                return
+
+    def _transfer_by_rows(self, item: Item, rows: int) -> None:
+        """Internal implementation of the row transferring technique.
+        
+        OCRs the amount transferred after each row
+        """
+        EXTRA_ITERATION_FACTOR = 1.5
+        amount = item.stack_size * (rows * 6)
+
+        for _ in range(round(rows * EXTRA_ITERATION_FACTOR) * 6):
+            slot = self.find(item)
+            if slot is None:
+                return
+
+            pg.moveTo(slot)
+            self.press("t")
+            transferred = self.get_amount_transferred(item, "rm")
+            if not transferred:
+                continue
+
+            print(f"Transferred {transferred}/{amount}...")
+            if amount <= transferred <= (amount + 10 * item.stack_size):
+                return

@@ -1,2 +1,4 @@
-from .dinosaurs.dinosaur import Dinosaur
+from .dinosaurs import Dinosaur
 from .player import Player
+
+__all__ = ("Dinosaur", "Player")

@@ -212,7 +212,7 @@ ELECTRONICS = Item(
 HIDE = Item(
     name="Hide",
     search_name="hide",
-    stack_size=100,
+    stack_size=200,
     inventory_icon="assets/items/hide.png",
 )
 

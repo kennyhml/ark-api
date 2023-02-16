@@ -1,12 +1,15 @@
 """
 Ark API module representing the player in ark.
 """
-from typing import Optional
+import time
+from typing import Iterable, Literal, Optional
 
 import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
+from numpy import isposinf
 
 from .._ark import Ark
+from .._tools import timedout
 from ..buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ..exceptions import InventoryNotAccessibleError, PlayerDidntTravelError
 from ..interfaces import Inventory, PlayerInventory, Structure
@@ -16,9 +19,14 @@ from ..items import Y_TRAP, Item
 class Player(Ark):
     """Represents the player in ark.
 
-    Provides the ability to control the player to do most actions
-    a normal player could do. The inventory can be accessed through
-    the players `inventory` attribute.
+
+    Provides the ability to control the player to emulate actions a real player
+    could do, such as turning or walking, checking on the buffs / debuffs or health,
+    and using the hotbar.
+
+
+    Additionally, it providdes a dedicated `PlayeInventory` which can be accessed
+    through the players `inventory` attribute.
 
     Attributes
     ----------
@@ -29,10 +37,22 @@ class Player(Ark):
         The players hotbar slots
     """
 
-    DEBUFF_REGION = (1270, 950, 610, 130)
-    HP_BAR = (1882, 1022, 15, 50)
+    _DEBUFF_REGION = (1270, 950, 610, 130)
+    _HP_BAR = (1882, 1022, 15, 50)
+    _HAS_DIED = (630, 10, 590, 80)
+    _STAM_BAR = (1850, 955, 70, 65)
+    _DAY_REGION = (0, 10, 214, 95)
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        health: int,
+        food: int,
+        water: int,
+        weight: int,
+        melee: int,
+        crafting: int,
+        fortitude: int,
+    ) -> None:
         super().__init__()
         self.inventory = PlayerInventory()
         self.HOTBAR = [
@@ -47,99 +67,9 @@ class Player(Ark):
             self.keybinds.hotbar_0,
         ]
 
-    def set_first_person(self) -> None:
-        """Sets the player to first person"""
-        pg.scroll(100)
-
-    def has_died(self) -> bool:
-        return (
-            self.window.locate_template(
-                "templates/you_died.png", region=(630, 10, 590, 80), confidence=0.7
-            )
-            is not None
-        )
-
-    def pick_up(self) -> None:
-        """Picks up an item by pressing E"""
-        self.press(self.keybinds.use)
-
-    def pick_all(self) -> None:
-        """Picks all items by pressing F"""
-        self.press(self.keybinds.target_inventory)
-
-    def empty_inventory(self) -> None:
-        """Spams the hotbar and then drops all items in inventory to clear up
-        the inventory. Spamming the hotbar is important in case it has somehow
-        picked up a crystal, which goes into the hotbar.
-        """
-        self.spam_hotbar()
-        self.inventory.open()
-        self.inventory.click_drop_all()
-        self.inventory.close()
-
-    def drop_all_items(self, item: Item) -> None:
-        """Opens the inventory and drops all on the specified item"""
-        self.inventory.open()
-        self.inventory.drop_all_items(item)
-        self.inventory.close()
-
-    def hide_hands(self) -> None:
-        """Looks up and down to hide the hands temporarily"""
-        self.look_up_hard()
-        self.sleep(0.2)
-        self.look_down_hard()
-        self.disable_hud()
-        self.sleep(0.5)
-        self.turn_y_by(-160)
-        self.sleep(0.3)
-
-    def spam_hotbar(self):
-        """Typewrites all the hotbar keys with crystals on them to open crystals fast."""
-        pg.typewrite("".join(c for c in self.HOTBAR), interval=0.01)
-
-    def set_hotbar(self) -> None:
-        """Sets the hotbar using shift left click on the crystals"""
-        input.keyDown("shift")
-        for _ in range(4):
-            for slot in self.HOTBAR:
-                self.press(slot)
-                self.sleep(0.5)
-        input.keyUp("shift")
-
-    def is_spawned(self) -> bool:
-        """Checks if the player is spawned"""
-        return (
-            self.window.locate_template(
-                "templates/stamina.png", region=(1850, 955, 70, 65), confidence=0.65
-            )
-            is not None
-        )
-
-    def needs_recovery(self) -> bool:
-        """Checks if the player needs to recover"""
-        return any(self.has_effect(buff) for buff in [THIRSTY, HUNGRY, BROKEN_BONES])
-
-    def has_effect(self, buff: Buff) -> bool:
-        """Checks if the player has the given buff"""
-        return (
-            self.window.locate_template(buff.image, region=self.DEBUFF_REGION, confidence=0.8)
-            is not None
-        )
-
-    def await_spawned(self) -> None:
-        """Waits for the player to spawn in, up to 50 seconds after which a
-        `PlayerDidntTravelError` is raised."""
-        counter = 0
-        while not (self.is_spawned() or self.has_died()):
-            self.sleep(0.5)
-            counter += 1
-
-            if counter > 100:
-                raise PlayerDidntTravelError("Failed to spawn in!")
-        print("Now spawned!")
-        self.sleep(1)
-
-    def turn_90_degrees(self, direction: str = "right", delay: int | float = 0) -> None:
+    def turn_90_degrees(
+        self, direction: Literal["right", "left"] = "right", delay: int | float = 0
+    ) -> None:
         """Turns by 90 degrees in given direction"""
         val = 130 if direction == "right" else -130
         self.turn_x_by(val)
@@ -166,6 +96,155 @@ class Player(Ark):
         """Turns the players' x-axis by the given amount"""
         input.moveRel(amount, 0, 0, None, False, False, True)
         self.sleep(delay)
+
+    def pick_up(self) -> None:
+        """Picks up an item by pressing E"""
+        self.press(self.keybinds.use)
+
+    def pick_all(self) -> None:
+        """Picks all items by pressing F"""
+        self.press(self.keybinds.target_inventory)
+
+    def drop_all(self, items: Optional[Iterable[Item | str]] = None) -> None:
+        """Opens the inventory and drops all on the specified item"""
+        self.inventory.open()
+        self.inventory.drop_all(items)
+        self.inventory.close()
+
+    def spam_hotbar(self):
+        """Typewrites all the hotbar keys with crystals on them to open crystals fast."""
+        pg.typewrite("".join(c for c in self.HOTBAR), interval=0.01)
+
+    def set_hotbar(self) -> None:
+        """Sets the hotbar using shift left click on the crystals"""
+        input.keyDown("shift")
+        for _ in range(4):
+            for slot in self.HOTBAR:
+                self.press(slot)
+                self.sleep(0.5)
+        input.keyUp("shift")
+
+    def walk(self, key, duration):
+        """'Walks' the given direction for the given duration.
+
+        Parameters:
+        ----------
+        key :class:`str`:
+            The key to hold to walk
+
+        duration :class: `int`|`float`:
+            The duration to walk for
+        """
+        input.keyDown(key)
+        self.sleep(duration=duration)
+        input.keyUp(key)
+
+    def crouch(self) -> None:
+        """Crouches the player"""
+        self.press(self.keybinds.crouch)
+
+    def prone(self) -> None:
+        """Prones the player"""
+        self.press(self.keybinds.prone)
+
+    def stand_up(self) -> None:
+        self.press("shift")
+
+    def disable_hud(self) -> None:
+        """Disables HUD"""
+        self.press("backspace")
+
+    def pick_up_bag(self):
+        """Picks up items from a drop script bag, deletes the bag after."""
+        self.look_down_hard()
+        self.press(self.keybinds.target_inventory)
+        self.sleep(0.5)
+        self._popcorn_bag()
+
+    def travel(self) -> None:
+        """Waits for the loading screen to appear, then to spawn in.
+        Being spawned in is determined by the orange "Day" of the HUD.
+
+        """
+        start = time.time()
+
+        while not self._is_travelling():
+            self.sleep(0.1)
+            if timedout(start, 45):
+                raise PlayerDidntTravelError
+        self.sleep(3)
+
+        self._spawn_in()
+
+    def set_first_person(self) -> None:
+        """Sets the player to first person"""
+        self.mouse_scroll(1)
+
+    def has_died(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/templates/you_died.png",
+                region=self._HAS_DIED,
+                confidence=0.7,
+            )
+            is not None
+        )
+
+    def hide_hands(self) -> None:
+        """Looks up and down to hide the hands temporarily"""
+        self.look_up_hard()
+        self.sleep(0.2)
+        self.look_down_hard()
+        self.disable_hud()
+        self.sleep(0.5)
+        self.turn_y_by(-160)
+        self.sleep(0.3)
+
+    def is_spawned(self) -> bool:
+        """Checks if the player is spawned"""
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/templates/day.png",
+                region=self._DAY_REGION,
+                confidence=0.8,
+                grayscale=True,
+            )
+            is not None
+        )
+
+    def needs_recovery(self) -> bool:
+        """Checks if the player needs to recover"""
+        return any(self.has_effect(buff) for buff in [THIRSTY, HUNGRY, BROKEN_BONES])
+
+    def has_effect(self, buff: Buff) -> bool:
+        """Checks if the player has the given buff"""
+        return (
+            self.window.locate_template(
+                buff.image, region=self._DEBUFF_REGION, confidence=0.8
+            )
+            is not None
+        )
+
+    def _spawn_in(self) -> None:
+        """Waits for the player to spawn in, up to 50 seconds after which a
+        `PlayerDidntTravelError` is raised."""
+        start = time.time()
+        while not (self.is_spawned() or self.has_died()):
+            pg.keyUp(self.keybinds.toggle_hud)
+            pg.keyDown(self.keybinds.toggle_hud)
+            self.sleep(0.1)
+
+            if timedout(start, 60):
+                pg.keyUp(self.keybinds.toggle_hud)
+                raise PlayerDidntTravelError("Failed to spawn in!")
+
+        pg.keyUp(self.keybinds.toggle_hud)
+
+    def _is_travelling(self) -> bool:
+        """Check if we are currently travelling (whitescreen)"""
+        return pg.pixelMatchesColor(
+            *self.window.convert_point(959, 493), (255, 255, 255), tolerance=10
+        )
 
     def do_crop_plots(self, refill_pellets: bool = False) -> None:
         """Empties all stacks of crop plots, starts facing the gacha,
@@ -392,54 +471,6 @@ class Player(Ark):
                 self.turn_y_by(60)
                 self.sleep(0.5)
 
-    def walk(self, key, duration):
-        """'Walks' the given direction for the given duration.
-
-        Parameters:
-        ----------
-        key :class:`str`:
-            The key to hold to walk
-
-        duration :class: `int`|`float`:
-            The duration to walk for
-        """
-        input.keyDown(key)
-        self.sleep(duration=duration)
-        input.keyUp(key)
-
-    def crouch(self) -> None:
-        """Crouches the player, or uncrouches if player is already crouched."""
-        self.press(self.keybinds.crouch)
-
-    def prone(self) -> None:
-        """Prones the player, or unprones if the player is already proned"""
-        self.press(self.keybinds.prone)
-
-    def disable_hud(self) -> None:
-        """Disables HUD"""
-        self.press("backspace")
-
-    def popcorn_bag(self) -> None:
-        bag = Inventory("Bag", "bag")
-        bag.open()
-        self.move_to(1287, 289)
-        while bag.is_open():
-            self.press("o")
-            self.sleep(0.3)
-
-    def pick_up_bag(self):
-        """Picks up items from a drop script bag, deletes the bag after."""
-        self.look_down_hard()
-        self.press(self.keybinds.target_inventory)
-        self.sleep(0.5)
-        self.popcorn_bag()
-
-    def popcorn_items(self, iterations: int) -> None:
-        for _ in range(iterations):
-            for slot in [(168, 280), (258, 280), (348, 277)]:
-                pg.moveTo(slot)
-                pg.press(self.keybinds.drop)
-
     def do_drop_script(self, item: Item, target_inventory: Inventory, slot=2):
         """Does the item drop script for the given item in the given structure.
         Used to empty heavy items out of structures that are not dedis. Player
@@ -500,3 +531,12 @@ class Player(Ark):
             if c > 10:
                 return False
         return True
+
+    def _popcorn_bag(self) -> None:
+        bag = Structure("Item Cache", "assets/wheels/item_cache.png")
+        bag.open()
+        bag.inventory.select_slot(0)
+
+        while bag.inventory.is_open():
+            self.press("o")
+            self.sleep(0.3)

@@ -1,7 +1,3 @@
-"""
-Ark API module representing the tribelog in ark.
-Using tesseract OCR and discord webhooks to inform the user when getting raided.
-"""
 from threading import Thread
 
 import cv2 as cv  # type: ignore[import]
@@ -15,9 +11,9 @@ from ark.exceptions import LogsNotOpenedError
 
 from ..._ark import Ark
 from ...exceptions import LogsNotOpenedError
-from .config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
-                     EVENT_MAPPING, INGORED_TERMS)
-from .message import TribeLogMessage
+from ._config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
+                      EVENT_MAPPING, INGORED_TERMS)
+from ._message import TribeLogMessage
 
 
 class TribeLog(Ark):
@@ -34,7 +30,7 @@ class TribeLog(Ark):
 
     Attributes:
     --------------------
-    _tribe_log :class:`list`:
+    tribe_log :class:`list`:
         A list containing the past 30 tribe log events as `TribeLogMessages`
     """
 

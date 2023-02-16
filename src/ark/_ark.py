@@ -5,11 +5,10 @@ import pyautogui as pg  # type: ignore[import]
 from pynput.mouse import Button, Controller  # type: ignore[import]
 
 from ._tools import state_checker
-from ._keybinds import Keybinds
+from .settings import InputSettings
 from .window import ArkWindow
 
 from pathlib import Path
-
 
 class Ark:
     """Base parent class for all classes representing objects in ark
@@ -24,7 +23,7 @@ class Ark:
         if Ark.window is None:
             Ark.window = ArkWindow()
 
-        self.keybinds: Keybinds = Keybinds.load()
+        self.keybinds: InputSettings = InputSettings.load()
         self.mouse = Controller()
 
     @state_checker
