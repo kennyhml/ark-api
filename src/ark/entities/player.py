@@ -2,11 +2,10 @@
 Ark API module representing the player in ark.
 """
 import time
-from typing import Iterable, Literal, Optional
+from typing import Iterable, Literal, Optional, overload
 
 import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
-from numpy import isposinf
 
 from .._ark import Ark
 from .._tools import timedout
@@ -14,6 +13,7 @@ from ..buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ..exceptions import InventoryNotAccessibleError, PlayerDidntTravelError
 from ..interfaces import Inventory, PlayerInventory, Structure
 from ..items import Y_TRAP, Item
+from ._stats import Stats
 
 
 class Player(Ark):
@@ -43,18 +43,24 @@ class Player(Ark):
     _STAM_BAR = (1850, 955, 70, 65)
     _DAY_REGION = (0, 10, 214, 95)
 
+    @overload
+    def __init__(self, *, stats: Stats) -> None:
+        ...
+
+    @overload
+    def __init__(self, health: int, food: int, water: int, weight: int) -> None:
+        ...
+
     def __init__(
-        self,
-        health: int,
-        food: int,
-        water: int,
-        weight: int,
-        melee: int,
-        crafting: int,
-        fortitude: int,
+        self, health=None, food=None, water=None, weight=None, *, stats=None
     ) -> None:
         super().__init__()
         self.inventory = PlayerInventory()
+        if stats is not None:
+            self.stats = stats
+        else:
+            self.stats = Stats(health, food, water, weight)
+
         self.HOTBAR = [
             self.keybinds.hotbar_2,
             self.keybinds.hotbar_3,
@@ -66,12 +72,14 @@ class Player(Ark):
             self.keybinds.hotbar_9,
             self.keybinds.hotbar_0,
         ]
+        self._lr_sens = 3.2 / self.settings.left_right_sens
+        self._ud_sens = 3.2 / self.settings.up_down_sens
 
     def turn_90_degrees(
         self, direction: Literal["right", "left"] = "right", delay: int | float = 0
     ) -> None:
         """Turns by 90 degrees in given direction"""
-        val = 130 if direction == "right" else -130
+        val = 129 if direction == "right" else -129
         self.turn_x_by(val)
         self.sleep(delay)
 
@@ -89,12 +97,12 @@ class Player(Ark):
 
     def turn_y_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' y-axis by the given amount"""
-        input.moveRel(0, amount, 0, None, False, False, True)
+        input.moveRel(0, round(amount * self._ud_sens), 0, None, False, False, True)
         self.sleep(delay)
 
     def turn_x_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' x-axis by the given amount"""
-        input.moveRel(amount, 0, 0, None, False, False, True)
+        input.moveRel(round(amount * self._lr_sens), 0, 0, None, False, False, True)
         self.sleep(delay)
 
     def pick_up(self) -> None:

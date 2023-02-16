@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from re import S
 from typing import Optional
 
 import dacite
@@ -25,6 +26,8 @@ class UserSettings:
     menu_transitions: bool
     resolution_x: int
     resolution_y: int
+    server_filter: int
+    last_server: str
 
     @staticmethod
     def load(path: Optional[str] = None) -> UserSettings:
@@ -36,13 +39,18 @@ class UserSettings:
 
         settings: dict[str, float | bool | str | Path] = {}
         settings["path"] = Path(path)
-
+        session_occurences = 0
         for line in contents:
             if line.startswith("[ScalabilityGroups]"):
                 break
 
             if "=" not in line:
                 continue
+
+            if "LastJoinedSessionPerCategory" in line and not settings.get("last_server"):
+                if session_occurences == settings.get("server_filter"):
+                    settings["last_server"] = line.split("=")[1].strip()
+                    continue
 
             option, value = line.rstrip().split("=")
             setting = config_map.get(option)
@@ -91,6 +99,7 @@ config_map = {
     "bDisableMenuTransitions": "menu_transitions",
     "ResolutionSizeX": "resolution_x",
     "ResolutionSizeY": "resolution_y",
+    "LastServerSearchType": "server_filter"
 }
 
 

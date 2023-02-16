@@ -1,14 +1,14 @@
 import time
+from pathlib import Path
 from typing import Optional
 
 import pyautogui as pg  # type: ignore[import]
 from pynput.mouse import Button, Controller  # type: ignore[import]
 
 from ._tools import state_checker
-from .settings import InputSettings
+from .settings import InputSettings, UserSettings
 from .window import ArkWindow
 
-from pathlib import Path
 
 class Ark:
     """Base parent class for all classes representing objects in ark
@@ -24,6 +24,7 @@ class Ark:
             Ark.window = ArkWindow()
 
         self.keybinds: InputSettings = InputSettings.load()
+        self.settings: UserSettings = UserSettings.load()
         self.mouse = Controller()
 
     @state_checker
