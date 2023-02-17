@@ -18,6 +18,7 @@ class WheelNotAccessibleError(WheelError):
     def __str__(self) -> str:
         return f"Wheel '{self.wheel}' could not be activated!"
 
+
 class UnexpectedWheelError(WheelError):
     """Raised when a wheel was accessed, but not the correct one"""
 
@@ -32,6 +33,7 @@ class UnexpectedWheelError(WheelError):
 class InterfaceError(Exception):
     """Base class for all interface exceptions"""
 
+
 class BedNotAccessibleError(InterfaceError):
     """Raised when the bed map could not be opened."""
 
@@ -40,16 +42,8 @@ class BedNotFoundError(InterfaceError):
     """Raised when the bed map could not be opened."""
 
 
-
-
-
-
 class InventoryError(InterfaceError):
     """Base class for all inventory exceptions"""
-
-
-
-
 
 
 class InventoryNotOpenError(InventoryError):
@@ -58,7 +52,7 @@ class InventoryNotOpenError(InventoryError):
 
     def __init__(self) -> None:
         self.action = inspect.stack()[1][3]
-        
+
     def __str__(self) -> str:
         return f"Attempted interaction '{self.action}' with closed inventory!"
 
@@ -69,7 +63,6 @@ class InventoryNotAccessibleError(InventoryError):
 
 class InventoryNotClosableError(InventoryError):
     """Raised when the inventory cannot be closed"""
-
 
 
 class ReceivingRemoveInventoryTimeout(InventoryError):
@@ -85,6 +78,7 @@ class NoItemsAddedError(InventoryError):
     def __str__(self) -> str:
         return f"Expected item {self.item} was not added!"
 
+
 class NoItemsDepositedError(InventoryError):
     """Raised when the 'X items deposited.' message does not appear."""
 
@@ -98,14 +92,27 @@ class NoGasolineError(InventoryError):
     def __str__(self) -> str:
         return f"{self.structure} is out of gasoline!"
 
+
 class PlayerError(Exception):
     """Base exception for all player errors"""
+
 
 class PlayerDidntSpawnError(PlayerError):
     """Raised when the player could not spawn in"""
 
+
 class PlayerDidntTravelError(PlayerError):
     """Raised when the travel screen could not be detected"""
+
+
+class PlayerDiedError(PlayerError):
+    """Raised when the player died"""
+
+    def __init__(self, task: str) -> None:
+        self.task = task
+
+    def __str__(self) -> str:
+        return f"Player died during task '{self.task}'!"
 
 
 class LogsNotOpenedError(Exception):
@@ -118,6 +125,7 @@ class ServerNotFoundError(Exception):
 
 class DediNotInRangeError(Exception):
     """Raised when the dedi deposit text could not be detected"""
+
 
 class DinoNotMountedError(Exception):
     """Raised when a dino cannot be mounted, either because it does not

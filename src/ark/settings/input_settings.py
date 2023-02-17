@@ -36,6 +36,8 @@ class InputSettings:
 
     @staticmethod
     def load(path: Optional[str] = None) -> InputSettings:
+        """Loads the settings from input.ini, using the `ARK_PATH` provided
+        in the configs or an alternatively passed path."""
         if path is None:
             path = f"{ARK_PATH}\Saved\Config\WindowsNoEditor\Input.ini"
 
@@ -51,10 +53,10 @@ class InputSettings:
 
             if not "=" in line:
                 continue
+
             if "ConsoleKeys" in line:
                 action_name = "ConsoleKeys"
                 key = line.split("=")[1].strip()
-
             else:
                 pattern = r'ActionName="([^"]+)",Key=([^,]+)'
                 matches = re.search(pattern, line)
@@ -64,16 +66,14 @@ class InputSettings:
                 action_name = matches.group(1)
                 key = matches.group(2)
 
-            action = config_map.get(action_name)
-            if action is None:
-                continue
-            
-            settings[action] = key
+            action = _KEY_MAP.get(action_name)
+            if action is not None:
+                settings[action] = key
 
         return dacite.from_dict(InputSettings, settings)
 
 
-config_map = {
+_KEY_MAP = {
     "ConsoleKeys": "console",
     "CrouchProneToggle": "crouch",
     "Prone": "prone",

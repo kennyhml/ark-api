@@ -54,7 +54,7 @@ class SessionList(Ark):
             The server to search for as a Server object.
         """
         self.click_at(616, 143, delay=0.5)
-        pg.typewrite(server.search_name, interval=0.01)
+        pg.typewrite(server.name, interval=0.01)
         self.press("enter")
         self.sleep(5)
 

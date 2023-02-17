@@ -28,6 +28,9 @@ class SpawnScreen(Ark):
     def search(self, name: str) -> None:
         """Searches for a bed"""
         self.click_at(self.SEARCH_BAR)
+        with pyautogui.hold("ctrl"):
+            pyautogui.press("a")
+
         pyautogui.typewrite(name.lower(), interval=0.001)
         self.sleep(0.3)
 

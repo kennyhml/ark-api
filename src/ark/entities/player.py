@@ -7,8 +7,8 @@ import pydirectinput as input  # type: ignore[import]
 from .._ark import Ark
 from .._tools import timedout
 from ..buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
-from ..exceptions import PlayerDidntTravelError
-from ..interfaces import Inventory, PlayerInventory, Structure
+from ..exceptions import PlayerDidntTravelError, PlayerDiedError
+from ..interfaces import PlayerInventory, SpawnScreen, Structure
 from ..items import Item
 from ._stats import Stats
 
@@ -273,11 +273,17 @@ class Player(Ark):
         self.sleep(1)
         self.stand_up()
 
-    def spawn_in(self) -> None:
-        """Waits for the player to spawn in, up to 50 seconds after which a
-        `PlayerDidntTravelError` is raised."""
+    def spawn_in(self, screen: SpawnScreen) -> None:
+        """Waits for the player to spawn in, catching possible scenarios such
+        as the player dying instantly upon spawning.
+
+        Parameters
+        ---------
+        screen :class:`SpawnScreen`:
+            The spawn screen used to travel
+        """
         start = time.time()
-        while not (self.is_spawned() or self.has_died()):
+        while not self.is_spawned():
             pg.keyUp(self.keybinds.toggle_hud)
             pg.keyDown(self.keybinds.toggle_hud)
             self.sleep(0.1)
@@ -285,6 +291,9 @@ class Player(Ark):
             if timedout(start, 60):
                 pg.keyUp(self.keybinds.toggle_hud)
                 raise PlayerDidntTravelError("Failed to spawn in!")
+
+            if self.has_died() or screen.is_open():
+                raise PlayerDiedError("Spawning")
 
         pg.keyUp(self.keybinds.toggle_hud)
 

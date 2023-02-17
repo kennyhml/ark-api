@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from re import S
 from typing import Optional
 
 import dacite
@@ -31,6 +30,8 @@ class UserSettings:
 
     @staticmethod
     def load(path: Optional[str] = None) -> UserSettings:
+        """Loads the settings from GameUserSettings.ini, using the `ARK_PATH`
+        provided in the configs or an alternatively passed path."""
         if path is None:
             path = f"{ARK_PATH}\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
 
@@ -39,6 +40,9 @@ class UserSettings:
 
         settings: dict[str, float | bool | str | Path] = {}
         settings["path"] = Path(path)
+
+        # keep track of the session occurrences so we can find the last joined
+        # server for the selected category, which is stored as an integer from 0-7
         session_occurences = 0
         for line in contents:
             if line.startswith("[ScalabilityGroups]"):
@@ -53,7 +57,7 @@ class UserSettings:
                     continue
 
             option, value = line.rstrip().split("=")
-            setting = config_map.get(option)
+            setting = _KEY_MAP.get(option)
 
             if setting is not None:
                 settings[setting] = _set_type(value)  # type: ignore[assignment]
@@ -66,6 +70,14 @@ class UserSettings:
         return datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M:%S")
 
     def listen_for_change(self) -> None:
+        """Listens to any changes made to the file, this is done by loading the
+        data of the last modified timestamp, and then waiting for the timestamp
+        to change. Once it has we compare the new data to the previous data and
+        notify about any changes.
+        
+        Particularly useful to find the name of a setting in the .ini by just
+        changing it ingame, listening to the changes and see what value gets
+        changed."""
         last_change = self.last_modified
         with open(self.path) as f:
             old_data = f.readlines()
@@ -73,6 +85,7 @@ class UserSettings:
         while self.last_modified == last_change:
             pass
 
+        print("Change detected in GameUserSettings.ini!")
         while True:
             try:
                 with open(self.path) as f:
@@ -87,7 +100,7 @@ class UserSettings:
                 print(f"Setting '{old_line.strip()}' changed to '{new_line.strip()}'!")
 
 
-config_map = {
+_KEY_MAP = {
     "UIScaling": "ui_scaling",
     "FOVMultiplier": "fov_multiplier",
     "LookLeftRightSensitivity": "left_right_sens",
