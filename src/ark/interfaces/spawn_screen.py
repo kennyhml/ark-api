@@ -70,7 +70,7 @@ class SpawnScreen(Ark):
                 if await_event(self._is_travelling, max_duration=15):
                     self.sleep(2)
                     return
-
+                    
             except PlayerDidntTravelError:
                 print("Unable to travel! Trying again...")
 

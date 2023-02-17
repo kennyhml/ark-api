@@ -29,6 +29,16 @@ class UnexpectedWheelError(WheelError):
     def __str__(self) -> str:
         return f"Unexpected wheel accessed. Expected '{self.expected_wheel}', got '{self.got_wheel}'!"
 
+class ActionNotFoundError(WheelError):
+    """Raised when a wheel action could not be found"""
+
+    def __init__(self, action: str) -> None:
+        self.action = action
+
+    def __str__(self) -> str:
+        return f"Failed to select action '{self.action}'!"
+
+
 
 class InterfaceError(Exception):
     """Base class for all interface exceptions"""

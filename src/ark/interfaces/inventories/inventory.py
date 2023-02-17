@@ -605,14 +605,14 @@ class Inventory(Ark):
         self.press("backspace")
         self.press("esc")
 
-    def transfer_top_row(self) -> None:
+    def transfer_top_row(self, speed: int | float = 0.2) -> None:
         if not self.is_open():
             raise InventoryNotOpenError
 
         for idx, slot in enumerate(self.SLOTS, start=1):
             pg.moveTo(get_center(slot))
             self.press("t")
-            self.sleep(0.2)
+            self.sleep(speed)
 
             if idx >= 6:
                 return

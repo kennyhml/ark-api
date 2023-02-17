@@ -284,18 +284,18 @@ class Player(Ark):
         """
         start = time.time()
         while not self.is_spawned():
-            pg.keyUp(self.keybinds.toggle_hud)
-            pg.keyDown(self.keybinds.toggle_hud)
+            pg.keyUp(self.keybinds.hud_info)
+            pg.keyDown(self.keybinds.hud_info)
             self.sleep(0.1)
 
             if timedout(start, 60):
-                pg.keyUp(self.keybinds.toggle_hud)
+                pg.keyUp(self.keybinds.hud_info)
                 raise PlayerDidntTravelError("Failed to spawn in!")
 
             if self.has_died() or screen.is_open():
                 raise PlayerDiedError("Spawning")
 
-        pg.keyUp(self.keybinds.toggle_hud)
+        pg.keyUp(self.keybinds.hud_info)
 
     def _is_travelling(self) -> bool:
         """Check if we are currently travelling (whitescreen)"""

@@ -1,29 +1,17 @@
-"""
-Ark API module handling the ark window.
+from typing import Literal, Optional, overload
 
-All further ark classes should derive from `ArkWindow` as it provides the
-methods neccessary to deal with alot of screen related stuff as well as
-converting points, regions and even images to the resolution the game is running
-in.
-
-Note that the ark window class expects points and templates to be taken on 1920x1080
-resolution.
-"""
-from typing import Literal, overload
 import cv2 as cv  # type: ignore[import]
 import numpy as np
 import PIL  # type: ignore[import]
 import pyautogui as pg  # type: ignore[import]
 import pygetwindow  # type: ignore[import]
-from mss import mss, tools  # type: ignore[import]
+from mss import mss, screenshot, tools  # type: ignore[import]
 from PIL import Image, ImageOps
 from pytesseract import pytesseract as tes  # type: ignore[import]
 from screeninfo import get_monitors  # type: ignore[import]
 
 from ._tools import get_center
-
-# set tesseract path
-tes.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+from .config import TESSERACT_PATH
 
 
 class ArkWindow:
@@ -36,7 +24,7 @@ class ArkWindow:
     is running. If no ark window could be grabbed, it assumes a regular 1920x1080
     ark window running on a 1920x1080 monitor.
 
-    Attributes:
+    Properties
     ----------
     window :class:`dict`:
         A dictionary containing the games boundaries
@@ -55,7 +43,7 @@ class ArkWindow:
         self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
         self._fullscreen = self.check_fullscreen()
-        print(self)
+        tes.tesseract_cmd = TESSERACT_PATH
 
     def __str__(self) -> str:
         return (
@@ -87,11 +75,28 @@ class ArkWindow:
             self._boundaries["top"] + (self._boundaries["height"] // 2),
         )
 
+    @overload
     def grab_screen(
-        self, region: tuple[int, int, int, int], path: str = "", convert: bool = True
+        self, region: tuple[int, int, int, int], path: str, convert: bool = True
     ) -> str:
-        """Grabs a screenshot of the given region using mss and saves it
-        at the specified path.
+        ...
+
+    @overload
+    def grab_screen(
+        self, region: tuple[int, int, int, int], path = None, convert: bool = True
+    ) -> screenshot.ScreenShot:
+        ...
+
+    def grab_screen(
+        self,
+        region: tuple[int, int, int, int],
+        path: Optional[str] = None,
+        convert: bool = True,
+    ) -> str:
+        """Grabs a screenshot of the given region using mss, if a path
+        is provided it will be saved at the path and the path will
+        be returned for convenience purposes, otherwise it will simply
+        return the `ScreenShot` object.
 
         Parameters:
         ---------
@@ -109,21 +114,17 @@ class ArkWindow:
         The specified path, to improve usage possibilites
         """
         with mss() as sct:
-            # set region
             if convert:
                 region = self.convert_region(region)
             x, y, w, h = region
 
             region_dict = {"left": x, "top": y, "width": w, "height": h}
-
-            # grab img
             img = sct.grab(region_dict)
 
-            if path:
-                # Save to the picture file
-                tools.to_png(img.rgb, img.size, output=path)
-                return path
-            return img
+            if path is None:
+                return img
+            tools.to_png(img.rgb, img.size, output=path)
+            return path
 
     def get_boundaries(self) -> dict:
         """Grab the ark window using pygetwindow and create the boundaries.
@@ -132,9 +133,6 @@ class ArkWindow:
         try:
             windows = pygetwindow.getWindowsWithTitle("ARK: Survival Evolved")
             self._handle: pygetwindow.Win32Window = windows[0]
-            print(f"Ark window handle: {self._handle._hWnd}")
-
-            # create a window dict for mss
             return {
                 "left": self._handle.left + self._CORRECT_X if self._handle.left else 0,
                 "top": self._handle.top + self._CORRECT_Y if self._handle.top else 0,
@@ -143,6 +141,7 @@ class ArkWindow:
             }
         except Exception as e:
             print(
+                "WARNING!\n"
                 f"Could not grab the ark boundaries!\n{e}\n\n"
                 "Assuming a 1920x1080 windowed fullscreen game."
             )
@@ -369,7 +368,7 @@ class ArkWindow:
     def locate_all_template(
         self,
         template: str,
-        region: tuple,
+        region: tuple[int, int, int, int],
         confidence: float,
         convert: bool = True,
         grayscale: bool = False,
@@ -385,7 +384,7 @@ class ArkWindow:
                     self.convert_image(template),
                     img,
                     confidence=confidence,
-                    grayscale=grayscale
+                    grayscale=grayscale,
                 )
             ),
             min_dist=20,

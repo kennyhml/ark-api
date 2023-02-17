@@ -1,9 +1,10 @@
 import math
+import random
 from typing import Optional, final
 
 import pyautogui as pg  # type: ignore[import]
 
-from ..._tools import await_event
+from ..._tools import await_event, get_center
 from ...exceptions import InventoryNotAccessibleError, NoItemsAddedError
 from ...items import Item
 from .._button import Button
@@ -103,11 +104,19 @@ class PlayerInventory(Inventory):
         # transferred. Before that check that it actually has the slots free
         # we need, if not we need to go back to doing it by row.
         target.search(item)
-        if target.count(item) + (stacks > 42):
+        if (target.count(item) + stacks) > 42:
             self._transfer_by_rows(item, rows)
             return
 
         self._transfer_by_stacks(item, stacks, target)
+
+    def transfer_spam(self, item: Item, times: int) -> None:
+        self.search(item)
+
+        for _ in range(times):
+            slot = random.choice(self.SLOTS)
+            self.move_to(get_center(slot))
+            self.press("t")
 
     def _transfer_by_stacks(self, item: Item, stacks: int, target: Inventory) -> None:
         """Internal implementation of the stack transferring technique.

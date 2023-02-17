@@ -1,6 +1,9 @@
 import functools
+import math
+import os
 import time
 from inspect import signature
+from pathlib import Path
 from threading import Thread
 from typing import Any, Callable
 
@@ -9,8 +12,7 @@ import win32clipboard  # type: ignore[import]
 
 from .exceptions import TerminatedError
 from .state import State
-from pathlib import Path
-import os
+
 
 def state_checker(func: Callable):
     """Checks on the Threads state before executing"""
@@ -162,3 +164,34 @@ def format_seconds(seconds: int) -> str:
         return f"{minutes} minute{'s' if minutes != 1 else ''} {seconds} second{'s' if seconds != 1 else ''}"
     else:
         return f"{seconds} seconds"
+
+def find_center(pixels: list[tuple[int, int]]) -> tuple[int, int]:
+    """Finds the 'center of mass' given an iterable of points"""
+    x_total = 0
+    y_total = 0
+
+    # sum up all the x and y points
+    for x, y in pixels:
+        x_total += x
+        y_total += y
+
+    # get the "average" point
+    center_x = round(x_total / len(pixels))
+    center_y = round(y_total / len(pixels))
+    return center_x, center_y
+
+
+def find_closest_pixel(
+    pixels: list[tuple[int, int]], center: tuple[int, int]
+) -> tuple[int, int]:
+    """Finds the pixel closest to the center"""
+    closest_pixel = pixels[0]
+    closest_distance = float("inf")
+
+    for pixel in pixels:
+        distance = math.sqrt((pixel[0] - center[0]) ** 2 + (pixel[1] - center[1]) ** 2)
+        if distance < closest_distance:
+            # set new closest distance
+            closest_pixel = pixel
+            closest_distance = distance
+    return closest_pixel

@@ -21,6 +21,7 @@ class InputSettings:
     prone: str
     target_inventory: str
     toggle_hud: str
+    hud_info: str
     use: str
     logs: str
     hotbar_0: str
@@ -81,6 +82,7 @@ _KEY_MAP = {
     "ShowMyInventory": "inventory",
     "AccessInventory": "target_inventory",
     "ToggleHUDHidden": "toggle_hud",
+    "ShowExtendedInfo": "hud_info",
     "TransferItem": "transfer",
     "Use": "use",
     "ShowTribeManager": "logs",
