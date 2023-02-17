@@ -11,7 +11,9 @@ from ..exceptions import (BedNotAccessibleError, BedNotFoundError,
 class SpawnScreen(Ark):
     """Represents the spawn screen in Ark.
 
-    Provides the ability to travel to a specific bed.
+    Provides the ability to search for beds and detect them on the map,
+    to then travel to them. If the bed icon itself cannot be found, the
+    center of the red X will be assumed to be the correct location.
     """
 
     SEARCH_BAR = (306, 982)
@@ -24,15 +26,32 @@ class SpawnScreen(Ark):
         self.click_at(self.SPAWN_BUTTON)
 
     def search(self, name: str) -> None:
-
+        """Searches for a bed"""
         self.click_at(self.SEARCH_BAR)
         pyautogui.typewrite(name.lower(), interval=0.001)
         self.sleep(0.3)
 
-    def travel_to(self, bed_name: str) -> None:
-        """Travels to the given beds name"""
+    def open(self) -> None:
+        """Opens the bed menu. Times out after 30 unsuccessful
+        attempts raising a `BedNotAccessibleError`"""
+        attempt = 0
+        while not self.is_open():
+            attempt += 1
+            self.press(self.keybinds.use)
+            self.sleep(1)
 
-        print(f"Travelling to {bed_name}")
+            if attempt > 30:
+                raise BedNotAccessibleError("Failed to access the bed!")
+
+    def travel_to(self, bed_name: str) -> None:
+        """Travels to a bed given it's name. If the spawn screen is not
+        already open, it will be opened first.
+        
+        Parameters
+        ----------
+        name :class:`str`:
+            The name of the bed to travel to
+        """
         self.open()
         self.search(bed_name)
 
@@ -52,8 +71,32 @@ class SpawnScreen(Ark):
             except PlayerDidntTravelError:
                 print("Unable to travel! Trying again...")
 
-    def _find_bed(self) -> tuple[int, int] | None:
+    def can_be_accessed(self) -> bool:
+        """Returns whether the bed can be accessed, determined by the
+        'Fast trave' text that appears when facing it."""
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/templates/fast_travel.png",
+                region=(0, 0, 1920, 1080),
+                confidence=0.7,
+            )
+            is not None
+        )
 
+    def is_open(self) -> bool:
+        """Returns whether the spawn screen is currently open."""
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces//bed_filter.png",
+                region=(140, 950, 150, 50),
+                confidence=0.8,
+            )
+            is not None
+        )
+
+    def _find_bed(self) -> tuple[int, int] | None:
+        """Finds the icon of a bed on the map, assuming the bed has already
+        been searched."""
         img_arr = np.array(self.window.grab_screen(self._BEDS_REGION))
         img = cv.cvtColor(img_arr, cv.COLOR_BGR2RGB)
 
@@ -76,7 +119,8 @@ class SpawnScreen(Ark):
         return point[0] + 160, point[1] + 70
 
     def _find_x(self) -> tuple[int, int] | None:
-
+        """Finds the red X on the map, assuming the bed has already
+        been searched."""
         img_arr = np.array(self.window.grab_screen(self._BEDS_REGION))
         img = cv.cvtColor(img_arr, cv.COLOR_BGR2RGB)
 
@@ -92,45 +136,11 @@ class SpawnScreen(Ark):
             return None
 
         contour = max(contours, key=cv.contourArea)
-
         if cv.contourArea(contour) < 300:
             return None
 
         point = get_center(cv.boundingRect(contour))
         return point[0] + 160, point[1] + 70
-
-    def can_be_accessed(self) -> bool:
-        return (
-            self.window.locate_template(
-                f"{self.PKG_DIR}/assets/templates/fast_travel.png",
-                region=(0, 0, 1920, 1080),
-                confidence=0.7,
-            )
-            is not None
-        )
-
-    def is_open(self) -> bool:
-        """Checks if the Bed menu is open"""
-        return (
-            self.window.locate_template(
-                f"{self.PKG_DIR}/assets/interfaces//bed_filter.png",
-                region=(140, 950, 150, 50),
-                confidence=0.8,
-            )
-            is not None
-        )
-
-    def open(self) -> None:
-        """Opens the bed menu. Times out after 30 unsuccessful
-        attempts raising a `BedNotAccessibleError`"""
-        attempt = 0
-        while not self.is_open():
-            attempt += 1
-            self.press(self.keybinds.use)
-            self.sleep(1)
-
-            if attempt > 30:
-                raise BedNotAccessibleError("Failed to access the bed!")
 
     def _is_travelling(self) -> bool:
         """Check if we are currently travelling (whitescreen)"""

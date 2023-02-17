@@ -9,6 +9,7 @@ import dacite
 
 from ..config import ARK_PATH
 
+
 @dataclass
 class InputSettings:
     """Represents the Input.ini"""
@@ -52,6 +53,8 @@ class InputSettings:
                 continue
             if "ConsoleKeys" in line:
                 action_name = "ConsoleKeys"
+                key = line.split("=")[1].strip()
+
             else:
                 pattern = r'ActionName="([^"]+)",Key=([^,]+)'
                 matches = re.search(pattern, line)
@@ -64,7 +67,7 @@ class InputSettings:
             action = config_map.get(action_name)
             if action is None:
                 continue
-
+            
             settings[action] = key
 
         return dacite.from_dict(InputSettings, settings)

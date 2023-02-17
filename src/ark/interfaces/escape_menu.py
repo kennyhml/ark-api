@@ -6,7 +6,11 @@ from ..exceptions import InterfaceError
 
 
 class EscapeMenu(Ark):
-    """Represents the ark ingame (escape) menu."""
+    """Represents the Escape Menu in Ark.
+
+    Provides the ability to open or close it, which is useful for clearing the screen
+    i.e close unwanted interfaces.
+    """
 
     _RESUME_REGION = (750, 215, 425, 200)
 
@@ -44,4 +48,3 @@ class EscapeMenu(Ark):
             )
             is not None
         )
-
