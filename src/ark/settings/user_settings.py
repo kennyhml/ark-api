@@ -27,6 +27,7 @@ class UserSettings:
     resolution_y: int
     server_filter: int
     last_server: str
+    reverse_logs: bool
 
     @staticmethod
     def load(path: Optional[str] = None) -> UserSettings:
@@ -112,7 +113,8 @@ _KEY_MAP = {
     "bDisableMenuTransitions": "menu_transitions",
     "ResolutionSizeX": "resolution_x",
     "ResolutionSizeY": "resolution_y",
-    "LastServerSearchType": "server_filter"
+    "LastServerSearchType": "server_filter",
+    "bReverseTribeLogOrder": "reverse_logs"
 }
 
 

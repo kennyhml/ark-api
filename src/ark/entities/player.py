@@ -8,7 +8,7 @@ from .._ark import Ark
 from .._tools import timedout
 from ..buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ..exceptions import PlayerDidntTravelError, PlayerDiedError
-from ..interfaces import PlayerInventory, SpawnScreen, Structure
+from ..interfaces import PlayerInventory, Structure
 from ..items import Item
 from ._stats import Stats
 
@@ -67,8 +67,9 @@ class Player(Ark):
             self.keybinds.hotbar_9,
             self.keybinds.hotbar_0,
         ]
-        self._lr_sens = 3.2 / self.settings.left_right_sens
-        self._ud_sens = 3.2 / self.settings.up_down_sens
+        self._lr_factor = 3.2 / self.settings.left_right_sens
+        self._ud_factor = 3.2 / self.settings.up_down_sens
+        self._fov_factor = 1.25 / self.settings.fov_multiplier
 
     def turn_90_degrees(
         self, direction: Literal["right", "left"] = "right", delay: int | float = 0
@@ -92,12 +93,28 @@ class Player(Ark):
 
     def turn_y_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' y-axis by the given amount"""
-        input.moveRel(0, round(amount * self._ud_sens), 0, None, False, False, True)
+        input.moveRel(
+            0,
+            round(amount * self._ud_factor * self._fov_factor),
+            0,
+            None,
+            False,
+            False,
+            True,
+        )
         self.sleep(delay)
 
     def turn_x_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' x-axis by the given amount"""
-        input.moveRel(round(amount * self._lr_sens), 0, 0, None, False, False, True)
+        input.moveRel(
+            round(amount * self._lr_factor * self._fov_factor),
+            0,
+            0,
+            None,
+            False,
+            False,
+            True,
+        )
         self.sleep(delay)
 
     def pick_up(self) -> None:
@@ -154,7 +171,7 @@ class Player(Ark):
         for _ in range(3):
             input.press("shift")
             self.sleep(0.1)
-            
+
     def disable_hud(self) -> None:
         """Disables HUD"""
         self.press("backspace")
@@ -273,7 +290,7 @@ class Player(Ark):
         self.sleep(1)
         self.stand_up()
 
-    def spawn_in(self, screen: SpawnScreen) -> None:
+    def spawn_in(self) -> None:
         """Waits for the player to spawn in, catching possible scenarios such
         as the player dying instantly upon spawning.
 
@@ -292,7 +309,7 @@ class Player(Ark):
                 pg.keyUp(self.keybinds.hud_info)
                 raise PlayerDidntTravelError("Failed to spawn in!")
 
-            if self.has_died() or screen.is_open():
+            if self.has_died():
                 raise PlayerDiedError("Spawning")
 
         pg.keyUp(self.keybinds.hud_info)

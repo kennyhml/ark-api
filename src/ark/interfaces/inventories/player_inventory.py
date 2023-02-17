@@ -116,11 +116,20 @@ class PlayerInventory(Inventory):
         for _ in range(times):
             slot = random.choice(self.SLOTS)
             self.move_to(get_center(slot))
-            self.press("t")
+            self.press(self.keybinds.transfer)
+
+    def hp_full(self) -> bool:
+        return pg.pixelMatchesColor(*(1118, 514), (15, 166, 181), tolerance=40)
+
+    def food_full(self) -> bool:
+        return pg.pixelMatchesColor(*(1118, 643), (15, 166, 181), tolerance=40)
+
+    def water_full(self) -> bool:
+        return pg.pixelMatchesColor(*(1118, 685), (15, 166, 181), tolerance=40)
 
     def _transfer_by_stacks(self, item: Item, stacks: int, target: Inventory) -> None:
         """Internal implementation of the stack transferring technique.
-        
+
         Counts the amount of items before pressing 'T' and waits for it to
         change after the press.
         """
@@ -133,7 +142,7 @@ class PlayerInventory(Inventory):
 
             pg.moveTo(slot)
             before = target.count(item)
-            self.press("t")
+            self.press(self.keybinds.transfer)
 
             target._receive_stack(item, before)
             transferred = target.count(item) * item.stack_size
@@ -144,7 +153,7 @@ class PlayerInventory(Inventory):
 
     def _transfer_by_rows(self, item: Item, rows: int) -> None:
         """Internal implementation of the row transferring technique.
-        
+
         OCRs the amount transferred after each row
         """
         EXTRA_ITERATION_FACTOR = 1.5
@@ -156,7 +165,7 @@ class PlayerInventory(Inventory):
                 return
 
             pg.moveTo(slot)
-            self.press("t")
+            self.press(self.keybinds.transfer)
             transferred = self.get_amount_transferred(item, "rm")
             if not transferred:
                 continue

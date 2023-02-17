@@ -24,6 +24,7 @@ class InputSettings:
     hud_info: str
     use: str
     logs: str
+    transfer: str
     hotbar_0: str
     hotbar_1: str
     hotbar_2: str
@@ -34,7 +35,7 @@ class InputSettings:
     hotbar_7: str
     hotbar_8: str
     hotbar_9: str
-
+    
     @staticmethod
     def load(path: Optional[str] = None) -> InputSettings:
         """Loads the settings from input.ini, using the `ARK_PATH` provided
@@ -96,4 +97,5 @@ _KEY_MAP = {
     "UseItem8": "hotbar_8",
     "UseItem9": "hotbar_9",
     "UseItem10": "hotbar_0",
+    "TransferItem": "transfer"
 }

@@ -1,6 +1,5 @@
 from typing import final
 
-from ...items import GUNPOWDER, SPARKPOWDER
 from ..spawn_screen import SpawnScreen
 from .structure import Structure
 

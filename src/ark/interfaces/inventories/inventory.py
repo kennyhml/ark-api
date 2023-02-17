@@ -426,7 +426,7 @@ class Inventory(Ark):
             before_take = self.count(item)
             if not stack:
                 self.click_at(pos)
-            self.press("t")
+            self.press(self.keybinds.transfer)
 
             self._receive_stack(item, before_take)
 
@@ -611,7 +611,7 @@ class Inventory(Ark):
 
         for idx, slot in enumerate(self.SLOTS, start=1):
             pg.moveTo(get_center(slot))
-            self.press("t")
+            self.press(self.keybinds.transfer)
             self.sleep(speed)
 
             if idx >= 6:
