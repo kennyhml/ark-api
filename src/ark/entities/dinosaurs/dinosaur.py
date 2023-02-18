@@ -1,13 +1,14 @@
 from ..._ark import Ark
 from ...exceptions import DinoNotMountedError
-from ...interfaces import Inventory
+from ...interfaces import ActionWheel, Inventory
 
 
 class Dinosaur(Ark):
-    def __init__(self, entity_name, action_wheel_img) -> None:
+    def __init__(self, entity_name, wheel) -> None:
         super().__init__()
         self.name = entity_name
-        self.inventory = Inventory(entity_name, action_wheel_img)
+        self.inventory = Inventory(entity_name)
+        self.wheel = ActionWheel(entity_name, wheel)
 
     def is_mounted(self) -> bool:
         return (
