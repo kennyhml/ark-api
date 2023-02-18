@@ -5,11 +5,8 @@ from typing import Optional, final
 import pyautogui as pg  # type: ignore[import]
 
 from ..._tools import await_event, get_center
-from ...exceptions import (
-    InventoryNotAccessibleError,
-    MissingItemErrror,
-    NoItemsAddedError,
-)
+from ...exceptions import (InventoryNotAccessibleError, MissingItemErrror,
+                           NoItemsAddedError)
 from ...items import Item
 from .._button import Button
 from .inventory import Inventory
@@ -46,6 +43,7 @@ class PlayerInventory(Inventory):
     _ADDED_REGION = (10, 1000, 220, 80)
     _ITEM_REGION = (117, 232, 582, 883)
     _UPPER_ITEM_REGION = (117, 230, 568, 191)
+    _CAPPED_ICON = (85, 235, 52, 50)
 
     def __init__(self):
         super().__init__("Player")

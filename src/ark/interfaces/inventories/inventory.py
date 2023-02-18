@@ -6,15 +6,12 @@ import pyautogui as pg  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import await_event, get_center, get_filepath, set_clipboard, timedout
+from ..._tools import (await_event, get_center, get_filepath, set_clipboard,
+                       timedout)
 from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
-from ...exceptions import (
-    InventoryNotAccessibleError,
-    InventoryNotClosableError,
-    InventoryNotOpenError,
-    NoItemsAddedError,
-    ReceivingRemoveInventoryTimeout,
-)
+from ...exceptions import (InventoryNotAccessibleError,
+                           InventoryNotClosableError, InventoryNotOpenError,
+                           NoItemsAddedError, ReceivingRemoveInventoryTimeout)
 from ...items import Item
 from .._button import Button
 
@@ -75,6 +72,7 @@ class Inventory(Ark):
     _UPPER_ITEM_REGION = (1240, 230, 568, 191)
     _SLOTS_REGION = (1074, 500, 60, 23)
     _REMOTE_INVENTORY = (1346, 563, 345, 43)
+    _CAPPED_ICON = (1210, 230, 55, 54)
 
     def __init__(
         self,
@@ -164,7 +162,7 @@ class Inventory(Ark):
             if attempts >= 6:
                 raise InventoryNotClosableError(f"Failed to close {self._name}!")
         self.sleep(0.3)
-        
+
     @overload
     def scroll(self, way: Literal["up", "down"], *, rows: int = 1) -> None:
         ...
@@ -254,7 +252,9 @@ class Inventory(Ark):
             self.click_at(self._DROP_ALL.location)
 
     @final
-    def transfer_all(self, items: Optional[Iterable[Item | str]] = None) -> None:
+    def transfer_all(
+        self, items: Optional[Iterable[Item | str] | Item | str] = None
+    ) -> None:
         """Searches for an iterable of Items or words and transfers all. If no
         items are passed, it simply transfers all without searching for anything.
 
@@ -483,6 +483,15 @@ class Inventory(Ark):
         if state != set_to:
             self.click_at(buttons[option].location)
         return None
+
+    @final
+    def is_capped(self) -> bool:
+        return self.window.locate_template(
+            f"{self.PKG_DIR}/assets/interfaces/capped.png",
+            region=self._CAPPED_ICON,
+            confidence=0.75,
+            grayscale=True,
+        ) is not None
 
     def select_slot(self, idx: int = 0) -> None:
         """Moves to the first slot"""
