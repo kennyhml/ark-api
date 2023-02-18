@@ -169,8 +169,7 @@ class Player(Ark):
     def stand_up(self) -> None:
         for _ in range(3):
             input.press("shift")
-            self.sleep(0.1)
-
+        input.keyUp("shift")
     def disable_hud(self) -> None:
         """Disables HUD"""
         self.press("backspace")

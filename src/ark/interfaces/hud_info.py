@@ -37,8 +37,7 @@ class HUDInfo(Ark):
             self.window.locate_template(
                 f"{self.PKG_DIR}/assets/interfaces/day.png",
                 region=self._DAY_REGION,
-                confidence=0.8,
-                grayscale=True,
+                confidence=0.75
             )
             is not None
         )

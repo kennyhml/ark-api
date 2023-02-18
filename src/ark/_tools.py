@@ -84,7 +84,7 @@ def await_event(
     if hasattr(func, "__self__"):
         log_str += f"of '{type(func.__self__).__name__}' "
     log_str += f"to return '{expected_return_value}' within {max_duration}s"
-    print(log_str)
+    # print(log_str)
 
     return_type = signature(func).return_annotation
     assert (

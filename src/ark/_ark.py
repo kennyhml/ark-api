@@ -3,12 +3,15 @@ from pathlib import Path
 from typing import Optional
 
 import pyautogui as pg  # type: ignore[import]
+import pydirectinput  # type: ignore[import]
 from pynput.mouse import Button, Controller  # type: ignore[import]
 
 from ._tools import state_checker
 from .settings import InputSettings, UserSettings
 from .window import ArkWindow
 
+pg.FAILSAFE = False
+pydirectinput.FAILSAFE = False
 
 class Ark:
     """Base parent class for all classes representing objects in ark

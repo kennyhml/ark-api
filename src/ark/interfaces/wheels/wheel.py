@@ -64,17 +64,17 @@ class ActionWheel(Ark):
         attempts = 0
         while not self.is_open():
             pyautogui.keyDown(self.keybinds.use)
-            if await_event(self.is_open, max_duration=3):
+            if await_event(self.is_open, max_duration=2):
                 break
 
             attempts += 1
-            if attempts > 5:
+            if attempts > 3:
                 raise WheelNotAccessibleError(self._name)
 
-            elif attempts > 3:
-                other_text = self.get_text()
-                if len(other_text) > 5:
-                    raise UnexpectedWheelError(self._name, other_text)
+            other_text = self.get_text()
+            if len(other_text) > 5:
+                raise UnexpectedWheelError(self._name, other_text)
+                
             self.sleep(1)
             pyautogui.keyUp(self.keybinds.use)
 

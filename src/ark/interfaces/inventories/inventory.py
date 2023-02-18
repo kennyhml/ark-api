@@ -6,12 +6,15 @@ import pyautogui as pg  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import (await_event, get_center, get_filepath, set_clipboard,
-                       timedout)
+from ..._tools import await_event, get_center, get_filepath, set_clipboard, timedout
 from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
-from ...exceptions import (InventoryNotAccessibleError,
-                           InventoryNotClosableError, InventoryNotOpenError,
-                           NoItemsAddedError, ReceivingRemoveInventoryTimeout)
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    InventoryNotClosableError,
+    InventoryNotOpenError,
+    NoItemsAddedError,
+    ReceivingRemoveInventoryTimeout,
+)
 from ...items import Item
 from .._button import Button
 
@@ -87,13 +90,13 @@ class Inventory(Ark):
         if isinstance(capacity, str):
             self._capacity = get_filepath(capacity)
 
-        self._contents: dict[Item, int] = {}
+        self._contents: dict[str, int] = {}
 
     def __str__(self) -> str:
         return f"Inventory of {self._name} with max slots {self._capacity}"
 
     @property
-    def contents(self) -> dict[Item, int]:
+    def contents(self) -> dict[str, int]:
         return self._contents
 
     @property
@@ -104,6 +107,19 @@ class Inventory(Ark):
     def craftables(self) -> list[Item] | None:
         return self._craftables
 
+    @final
+    def add_contents(self, item: Item, stacks: int) -> None:
+        try:
+            self._contents[item.name] += stacks
+        except KeyError:
+            self._contents[item.name] = stacks
+
+    @final
+    def set_content(self, item: Item, stacks: Optional[int] = None) -> None:
+        if stacks is not None:
+            self._contents[item.name] = stacks
+        else:
+            self._contents[item.name] = self.count(item)
     @final
     def locate_button(self, button: Button, **kwargs) -> bool:
         assert button.template is not None and button.region is not None
@@ -486,12 +502,15 @@ class Inventory(Ark):
 
     @final
     def is_capped(self) -> bool:
-        return self.window.locate_template(
-            f"{self.PKG_DIR}/assets/interfaces/capped.png",
-            region=self._CAPPED_ICON,
-            confidence=0.75,
-            grayscale=True,
-        ) is not None
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/capped.png",
+                region=self._CAPPED_ICON,
+                confidence=0.75,
+                grayscale=True,
+            )
+            is not None
+        )
 
     def select_slot(self, idx: int = 0) -> None:
         """Moves to the first slot"""
