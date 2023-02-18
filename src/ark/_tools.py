@@ -28,6 +28,7 @@ def state_checker(func: Callable):
 
     return wrapper
 
+
 def get_filepath(filepath: str) -> str:
     """Validates the given filepath to allow to adjust files to the package
     path as well as loading files from the relative bot files."""
@@ -39,12 +40,15 @@ def get_filepath(filepath: str) -> str:
         raise FileNotFoundError(f"Could not find {filepath} anywhere.")
     return abs_path.replace("/", "\\")
 
+
 def timedout(timer: float, max_time: int | float) -> bool:
     """Checks whether the given timer has exceeded the maximum time"""
     return (time.time() - timer) > max_time
 
+
 def yes_no(boolean_value: bool) -> str:
     return ["No", "Yes"][boolean_value]
+
 
 def threaded(name: str):
     """Threads a function, beware that it will lose its return values"""
@@ -64,23 +68,27 @@ def await_event(
     func: Callable,
     expected_return_value: Any = True,
     max_duration: int | float = 5,
+    ignore_annotation: bool = False,
 ) -> bool:
     """Awaits for the given function to return an expected value.
     Returns whether the function returned the value in the expected time.
     """
+
     @state_checker
     def sleep(s):
         time.sleep(s)
-
-    log_str = f"Awaiting function '{func.__name__}'"
+    if not func.__name__ == "<lambda>":
+        log_str = f"Awaiting function '{func.__name__}' "
+    else:
+        log_str = f"Awaiting function '{func.__qualname__}' "
     if hasattr(func, "__self__"):
-        log_str += f" of '{type(func.__self__).__name__}' "
+        log_str += f"of '{type(func.__self__).__name__}' "
     log_str += f"to return '{expected_return_value}' within {max_duration}s"
     print(log_str)
 
     return_type = signature(func).return_annotation
-    assert return_type == type(
-        expected_return_value
+    assert (
+        return_type == type(expected_return_value) or ignore_annotation
     ), "Functions return type does not match expected return type."
 
     counter = 0
@@ -92,9 +100,13 @@ def await_event(
             return False
     return True
 
+
 def ark_is_running() -> bool:
     """Checks if the passed process is running"""
-    return "ARK: Survival Evolved" in [process.name() for process in psutil.process_iter()]
+    return "ARK: Survival Evolved" in [
+        process.name() for process in psutil.process_iter()
+    ]
+
 
 def close_ark() -> None:
     for process in psutil.process_iter():
@@ -141,13 +153,15 @@ def filter_points(points: set, minimum_distance: int) -> set:
             filtered.add(eps)
     return filtered
 
+
 def set_clipboard(text):
     """Puts the passed text into the clipboard to allow for pasting"""
     win32clipboard.OpenClipboard()
     win32clipboard.EmptyClipboard()
     win32clipboard.SetClipboardText(text, win32clipboard.CF_TEXT)
     win32clipboard.CloseClipboard()
-    
+
+
 def format_seconds(seconds: int) -> str:
     """Formats a number in seconds to a string nicely displaying it in
     different formats."""
@@ -164,6 +178,7 @@ def format_seconds(seconds: int) -> str:
         return f"{minutes} minute{'s' if minutes != 1 else ''} {seconds} second{'s' if seconds != 1 else ''}"
     else:
         return f"{seconds} seconds"
+
 
 def find_center(pixels: list[tuple[int, int]]) -> tuple[int, int]:
     """Finds the 'center of mass' given an iterable of points"""

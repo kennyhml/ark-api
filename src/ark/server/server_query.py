@@ -31,6 +31,9 @@ def query(server: Server) -> None:
         query_port = server.query_port = data["attributes"]["portQuery"]
         print(f"Found server query port: {query_port}")
 
+    _set_server_day(server)
+    print(f"Server day: {server.day}")
+
     status = server.status = _get_server_status(server.ip, server.query_port)
     print(f"Server status: {status}")
 
@@ -52,3 +55,10 @@ def _get_server_status(ip: str, port: str) -> str:
         return "Down"
     except TimeoutError:
         return "Down"
+
+
+def _set_server_day(server: Server) -> None:
+    assert server.ip and server.query_port, "Can't set day without IP"
+
+    data = a2s.rules((server.ip, server.query_port))
+    server.day = data["DayTime_s"]

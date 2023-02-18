@@ -7,6 +7,7 @@ from .spawn_screen import SpawnScreen
 from .structures import *
 from .tribelog import TribeLog
 from .wheels import ActionWheel
+from .hud_info import HUDInfo
 
 __all__ = (
     "Console",
@@ -24,4 +25,5 @@ __all__ = (
     "IndustrialGrinder",
     "Structure",
     "TekDedicatedStorage",
+    "HUDInfo"
 )

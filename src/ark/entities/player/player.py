@@ -4,13 +4,13 @@ from typing import Iterable, Literal, Optional, overload
 import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
-from .._ark import Ark
-from .._tools import timedout
-from ..buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
-from ..exceptions import PlayerDidntTravelError, PlayerDiedError
-from ..interfaces import PlayerInventory, Structure
-from ..items import Item
-from ._stats import Stats
+from ..._ark import Ark
+from ..._tools import timedout
+from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
+from ...exceptions import PlayerDidntTravelError, PlayerDiedError
+from ...interfaces import HUDInfo, PlayerInventory, Structure
+from ...items import Item
+from .._stats import Stats
 
 
 class Player(Ark):
@@ -31,14 +31,12 @@ class Player(Ark):
     hotbar :class:`list[str]`:
         The players hotbar slots
     """
-
     _DEBUFF_REGION = (1270, 950, 610, 130)
     _ADDED_REGION = (0, 450, 314, 240)
     _HP_BAR = (1882, 1022, 15, 50)
     _HAS_DIED = (630, 10, 590, 80)
     _STAM_BAR = (1850, 955, 70, 65)
-    _DAY_REGION = (0, 10, 214, 95)
-
+    
     @overload
     def __init__(self, *, stats: Stats) -> None:
         ...
@@ -67,6 +65,7 @@ class Player(Ark):
             self.keybinds.hotbar_9,
             self.keybinds.hotbar_0,
         ]
+        self.hud = HUDInfo()
         self._lr_factor = 3.2 / self.settings.left_right_sens
         self._ud_factor = 3.2 / self.settings.up_down_sens
         self._fov_factor = 1.25 / self.settings.fov_multiplier
@@ -222,15 +221,7 @@ class Player(Ark):
 
     def is_spawned(self) -> bool:
         """Checks if the player is spawned"""
-        return (
-            self.window.locate_template(
-                f"{self.PKG_DIR}/assets/templates/day.png",
-                region=self._DAY_REGION,
-                confidence=0.8,
-                grayscale=True,
-            )
-            is not None
-        )
+        return self.hud.is_open()
 
     def has_buff(self, buff: Buff) -> bool:
         """Checks if the player has the given buff"""

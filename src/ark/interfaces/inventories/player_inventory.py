@@ -5,7 +5,11 @@ from typing import Optional, final
 import pyautogui as pg  # type: ignore[import]
 
 from ..._tools import await_event, get_center
-from ...exceptions import InventoryNotAccessibleError, NoItemsAddedError
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    MissingItemErrror,
+    NoItemsAddedError,
+)
 from ...items import Item
 from .._button import Button
 from .inventory import Inventory
@@ -25,6 +29,12 @@ class PlayerInventory(Inventory):
     SLOTS = [
         (x, y, 93, 93) for y in range(232, 883, 93) for x in range(117, 582 + 93, 93)
     ]
+    HEAD = (750, 155, 94, 94)
+    TORSO = (750, 252, 94, 94)
+    LEGS = (750, 349, 94, 94)
+    HANDS = (1076, 155, 94, 94)
+    OFFHAND = (1076, 252, 94, 94)
+    FEET = (1076, 349, 94, 94)
 
     _CREATE_FOLDER = Button((513, 189))
     _TRANSFER_ALL = Button((350, 180))
@@ -110,6 +120,48 @@ class PlayerInventory(Inventory):
 
         self._transfer_by_stacks(item, stacks, target)
 
+    def equip(self, item: Item) -> None:
+        self.search(item)
+        self.sleep(0.3)
+
+        pos = self.find(item)
+        if pos is None:
+            raise MissingItemErrror(item.name)
+
+        before = self.count(item)
+        self.click_at(pos)
+        self.press(self.keybinds.use)
+
+        if not await_event(
+            lambda: before != self.count(item), max_duration=30, ignore_annotation=True
+        ):
+            raise TimeoutError
+
+    def unequip(self, item: Item) -> None:
+        for slot in [
+            self.HEAD,
+            self.TORSO,
+            self.LEGS,
+            self.HANDS,
+            self.OFFHAND,
+            self.FEET,
+        ]:
+            if not self._slot_has_item(slot, item):
+                continue
+
+            self.click_at(get_center(slot))
+            self.press(self.keybinds.use)
+
+            if not await_event(
+                lambda: self._slot_has_item(slot, item),
+                False,
+                max_duration=30,
+                ignore_annotation=True,
+            ):
+                raise TimeoutError
+            return
+        raise MissingItemErrror(item.name)
+
     def transfer_spam(self, item: Item, times: int) -> None:
         self.search(item)
 
@@ -126,6 +178,14 @@ class PlayerInventory(Inventory):
 
     def water_full(self) -> bool:
         return pg.pixelMatchesColor(*(1118, 685), (15, 166, 181), tolerance=40)
+
+    def _slot_has_item(self, slot: tuple[int, int, int, int], item: Item) -> bool:
+        return (
+            self.window.locate_template(
+                item.inventory_icon, slot, confidence=0.7, grayscale=True
+            )
+            is not None
+        )
 
     def _transfer_by_stacks(self, item: Item, stacks: int, target: Inventory) -> None:
         """Internal implementation of the stack transferring technique.

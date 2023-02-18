@@ -43,6 +43,11 @@ class ActionNotFoundError(WheelError):
 class InterfaceError(Exception):
     """Base class for all interface exceptions"""
 
+class TimerNotVisibleError(InterfaceError):
+    """Raised when the timer is not visible"""
+
+
+
 
 class BedNotAccessibleError(InterfaceError):
     """Raised when the bed map could not be opened."""
@@ -101,6 +106,16 @@ class NoGasolineError(InventoryError):
 
     def __str__(self) -> str:
         return f"{self.structure} is out of gasoline!"
+
+class MissingItemErrror(InventoryError):
+    """Raised when an item is missing"""
+
+    def __init__(self, item: str) -> None:
+        self.item = item
+
+    def __str__(self) -> str:
+        return f"{self.item} could not be found in the inventory!"
+
 
 
 class PlayerError(Exception):

@@ -1,8 +1,10 @@
-from typing import Literal
+from typing import Literal, final
+
 from .._button import Button
 from .inventory import Inventory
 
 
+@final
 class DedicatedStorageInventory(Inventory):
     """Represents the Dedicated Storage in Ark.
 

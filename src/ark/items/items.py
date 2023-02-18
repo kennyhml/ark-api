@@ -363,3 +363,10 @@ WOOD = Item(
     stack_size=100,
     inventory_icon="assets/items/fiber.png",
 )
+
+TEK_GAUNTLETS = Item(
+    name="Tek Gauntlets",
+    search_name="tek gaunt",
+    stack_size=1,
+    inventory_icon="assets/items/tek_gauntlets.png"
+)
