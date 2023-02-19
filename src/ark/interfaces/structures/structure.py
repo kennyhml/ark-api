@@ -1,4 +1,5 @@
 from typing import Any, Optional
+import cv2
 
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
@@ -126,7 +127,7 @@ class Structure(Ark):
         except InventoryNotAccessibleError:
             self.action_wheel.activate()
             self.action_wheel.deactivate()
-            self.inventory.open(max_duration=20)
+            self.inventory.open(max_duration=60)
 
     def close(self) -> None:
         """Wraps the inventory `close` function."""
@@ -163,7 +164,9 @@ class Structure(Ark):
         # grab the region of interest and apply denoising
         img = self.window.grab_screen(roi, convert=False)
         img = self.window.denoise_text(img, denoise_rgb=(255, 255, 255), variance=5)
-
+        cv2.imshow("", img)
+        cv2.waitKey(1)
+        
         raw_result = tes.image_to_string(
             img,
             config="-c tessedit_char_whitelist=0123456789liIxObL --psm 7 -l eng",

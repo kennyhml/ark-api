@@ -155,7 +155,7 @@ class Inventory(Ark):
             if await_event(self.is_open, max_duration=INVENTORY_OPEN_INTERVAL):
                 break
 
-            if (max_duration / INVENTORY_OPEN_INTERVAL) > attempts:
+            if attempts > (max_duration / INVENTORY_OPEN_INTERVAL):
                 raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
         self._await_receiving_remove_inventory()
 

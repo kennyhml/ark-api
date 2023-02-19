@@ -7,7 +7,6 @@ from .structure import Structure
 
 @final
 class TekCropPlot(Structure):
-
+    
     def __init__(self, name: str) -> None:
-        super().__init__(name, "assets/wheels/tek_crop_plot.png")
-        self.inventory = CropPlotInventory(name)
+        super().__init__(name, "assets/wheels/tek_crop_plot.png", inventory=CropPlotInventory(name))

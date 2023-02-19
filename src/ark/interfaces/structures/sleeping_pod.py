@@ -2,7 +2,7 @@ import time
 from typing import final
 
 from ..._tools import timedout
-from ...entities import Player
+from ...entities.player import Player
 from ..spawn_screen import SpawnScreen
 from ..wheels import TekPodWheel
 from .structure import Structure

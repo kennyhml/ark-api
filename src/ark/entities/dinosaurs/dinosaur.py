@@ -31,7 +31,7 @@ class Dinosaur(Ark):
         except InventoryNotAccessibleError:
             self.action_wheel.activate()
             self.action_wheel.deactivate()
-            self.inventory.open(max_duration=20)
+            self.inventory.open(max_duration=60)
 
     def is_mounted(self) -> bool:
         return (

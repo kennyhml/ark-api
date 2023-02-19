@@ -69,7 +69,10 @@ class InputSettings:
                 key = matches.group(2)
 
             action = _KEY_MAP.get(action_name)
-            if action is not None:
+            if key.lower() in _REPLACE and action is not None:
+                settings[action] = str(_REPLACE.index(key.lower()))
+
+            elif action is not None:
                 settings[action] = key.lower()
 
         return dacite.from_dict(InputSettings, settings)
@@ -99,3 +102,5 @@ _KEY_MAP = {
     "UseItem10": "hotbar_0",
     "TransferItem": "transfer"
 }
+
+_REPLACE = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']

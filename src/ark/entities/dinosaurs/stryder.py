@@ -10,7 +10,7 @@ class Stryder(Dinosaur):
     """Represents a stryder in ark, used for resource logistics."""
 
     def __init__(self) -> None:
-        super().__init__("Tek Stryder", "action_wheel_stryder")
+        super().__init__("Tek Stryder", "assets/wheels/stryder.png")
 
     def find_dedi_transfer_tab(self) -> tuple | None:
         """Finds the dedi transfer tab by denoising for the orange text.

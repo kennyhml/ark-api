@@ -26,7 +26,7 @@ class TekDedicatedStorage(Structure):
     @overload
     def deposit(self, items: list[Item], get_amount: Literal[False]) -> None:
         ...
-
+        
     @overload
     def deposit(self, items: list[Item], get_amount: Literal[True]) -> tuple[Item, int]:
         ...
@@ -68,16 +68,17 @@ class TekDedicatedStorage(Structure):
             if not self._find_item_deposited(item):
                 continue
 
+            print(f"{item.name} was deposited...")
             # 5 attempts to get a better chance for a good result
             for _ in range(5):
                 if amount := self._get_amount_deposited(item):
                     return item, amount
-        return item, 0
+        return None
 
     def can_be_opened(self) -> bool:
         """Checks if the dedi can be opened by attempting to do so"""
         try:
-            self.open()
+            self.inventory.open(max_duration=3)
         except InventoryNotAccessibleError:
             return False
         self.close()

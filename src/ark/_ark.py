@@ -13,6 +13,7 @@ from .window import ArkWindow
 pg.FAILSAFE = False
 pydirectinput.FAILSAFE = False
 
+
 class Ark:
     """Base parent class for all classes representing objects in ark
     Provides access to the games window, mouse and keypress simulation,
@@ -20,15 +21,20 @@ class Ark:
     """
 
     PKG_DIR = str(Path(__file__).parent)
-    window: ArkWindow = None  # type: ignore[assignment]
+    window: ArkWindow = None  # type:ignore[assignment]
+    keybinds: InputSettings = None  # type:ignore[assignment]
+    settings: UserSettings = None  # type:ignore[assignment]
+    mouse = Controller()
 
-    def __init__(self) -> None:
-        if Ark.window is None:
+    def __init__(self, reinit: bool = False) -> None:
+        if Ark.window is None or reinit:
             Ark.window = ArkWindow()
 
-        self.keybinds: InputSettings = InputSettings.load()
-        self.settings: UserSettings = UserSettings.load()
-        self.mouse = Controller()
+        if Ark.keybinds is None or reinit:
+            Ark.keybinds = InputSettings.load()
+
+        if Ark.settings is None or reinit:
+            Ark.settings = UserSettings.load()
 
     @state_checker
     def sleep(self, duration: int | float) -> None:

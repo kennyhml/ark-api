@@ -5,13 +5,4 @@ from .industrial_forge import IndustrialForge
 from .industrial_grinder import IndustrialGrinder
 from .structure import Structure
 from .tek_crop_plot import TekCropPlot
-
-__all__ = (
-    "Structure",
-    "TekDedicatedStorage",
-    "IndustrialGrinder",
-    "ChemistryBench",
-    "IndustrialForge",
-    "Bed",
-    "TekCropPlot",
-)
+from .sleeping_pod import TekSleepingPod

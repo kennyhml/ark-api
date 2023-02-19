@@ -8,7 +8,9 @@ from ..._ark import Ark
 from ..._tools import timedout
 from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ...exceptions import PlayerDidntTravelError, PlayerDiedError
-from ...interfaces import HUDInfo, PlayerInventory, Structure
+from ...interfaces.hud_info import HUDInfo
+from ...interfaces.structures.structure import Structure
+from ...interfaces.inventories import PlayerInventory
 from ...items import Item
 from .._stats import Stats
 
@@ -55,6 +57,7 @@ class Player(Ark):
         else:
             self.stats = Stats(health, food, water, weight)
         self.HOTBAR = [
+            self.keybinds.hotbar_1,
             self.keybinds.hotbar_2,
             self.keybinds.hotbar_3,
             self.keybinds.hotbar_4,
@@ -201,7 +204,7 @@ class Player(Ark):
         the same but on a different position."""
         return (
             self.window.locate_template(
-                f"{self.PKG_DIR}/assets/icons/added.png",
+                f"{self.PKG_DIR}/assets/templates/added.png",
                 region=self._ADDED_REGION,
                 confidence=0.75,
             )

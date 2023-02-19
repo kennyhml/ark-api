@@ -129,6 +129,7 @@ DAYTIME_MAPPING: dict[str, str] = {
     "B": "8",
     "Dayy": "Day",
     ";": "",
+    "]": "1"
 }
 
 # terms to prevent alerting for

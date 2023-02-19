@@ -204,15 +204,14 @@ class TribeLog(Ark):
                 content = self.get_message_contents(log_img.crop(message_region))
                 if not content:
                     continue
-            except:
-                continue
 
-            print(f"Found {day} with contents {content}")
+                print(f"Found {day} with contents {content}")
 
-            # check if the message is already known or if the contents are irrelevant
-            if self.day_is_known(day) or self.content_is_irrelevant(content[1]):
-                continue
-
+                # check if the message is already known or if the contents are irrelevant
+                if self.day_is_known(day) or self.content_is_irrelevant(content[1]):
+                    continue
+            except: continue
+            
             # new message with relevant contents, create message Object and add it
             # to the new messages
             message = TribeLogMessage(day, *content)
@@ -264,7 +263,8 @@ class TribeLog(Ark):
             )
             or multiple
         )
-
+        return 
+        
         # send the message
         self.alert_webhook.send(
             content="@everyone" if mention else "",
