@@ -1,5 +1,5 @@
 from ..._ark import Ark
-from ...exceptions import DinoNotMountedError
+from ...exceptions import DinoNotMountedError, InventoryNotAccessibleError
 from ...interfaces import ActionWheel, Inventory
 
 
@@ -8,7 +8,30 @@ class Dinosaur(Ark):
         super().__init__()
         self.name = entity_name
         self.inventory = Inventory(entity_name)
-        self.wheel = ActionWheel(entity_name, wheel)
+        self.action_wheel = ActionWheel(entity_name, wheel)
+
+    def access(self) -> None:
+        """Wraps the inventory `open` function using the action wheel to
+        validate whether we are actually in range of it on failure.
+
+        Raises
+        ------
+        `InventoryNotAccessibleError`
+            If the Inventory could not be accessed even though it is in
+            range (determined by the action wheel)
+
+        `WheelNotAccessibleError`
+            When no wheel could be opened at all after several attempts
+
+        `UnexpectedWheelError`
+            When a wheel was opened but is of an unexpected entity
+        """
+        try:
+            self.inventory.open()
+        except InventoryNotAccessibleError:
+            self.action_wheel.activate()
+            self.action_wheel.deactivate()
+            self.inventory.open(max_duration=20)
 
     def is_mounted(self) -> bool:
         return (
@@ -79,7 +102,7 @@ class Dinosaur(Ark):
             self.press(self.keybinds.use)
             if self.await_dismounted():
                 return
-                
+
         self.sleep(0.5)
 
     def attack(self, button: str) -> None:

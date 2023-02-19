@@ -125,6 +125,7 @@ class Structure(Ark):
             self.inventory.open()
         except InventoryNotAccessibleError:
             self.action_wheel.activate()
+            self.action_wheel.deactivate()
             self.inventory.open(max_duration=20)
 
     def close(self) -> None:
