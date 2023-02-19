@@ -70,7 +70,7 @@ class InputSettings:
 
             action = _KEY_MAP.get(action_name)
             if action is not None:
-                settings[action] = key
+                settings[action] = key.lower()
 
         return dacite.from_dict(InputSettings, settings)
 

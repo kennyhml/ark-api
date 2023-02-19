@@ -78,6 +78,10 @@ class ActionWheel(Ark):
             self.sleep(1)
             pyautogui.keyUp(self.keybinds.use)
 
+    def deactivate(self) -> None:
+        pyautogui.keyUp(self.keybinds.use)
+        self.sleep(0.5)
+        
     def select_action(self, position: tuple[int, int], click: bool = True) -> None:
         pydirectinput.moveTo(*position, duration=0.1)
         self.sleep(0.1)
