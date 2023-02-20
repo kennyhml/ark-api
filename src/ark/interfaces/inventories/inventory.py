@@ -65,7 +65,7 @@ class Inventory(Ark):
     _UNL_ENGRAMS = Button((1770, 188), (1742, 160, 56, 54), "unlearned_engrams.png")
     _TRANSFER_ALL = Button((1425, 190))
     _DROP_ALL = Button((1477, 187))
-    _CRAFTING_TAB = Button((1716, 118))
+    _CRAFTING_TAB = Button((1716, 118), (1627, 82, 211, 69), "crafting.png")
     _INVENTORY_TAB = Button((1322, 118), (1235, 88, 184, 60), "inventory.png")
     _CREATE_FOLDER = Button((1584, 187))
 
@@ -130,7 +130,7 @@ class Inventory(Ark):
 
     def is_open(self) -> bool:
         """Checks if the inventory is open."""
-        return self.locate_button(self._INVENTORY_TAB, confidence=0.8)
+        return self.locate_button(self._INVENTORY_TAB, confidence=0.8) or self.locate_button(self._CRAFTING_TAB, confidence=0.8)
 
     def open(self, default_key: bool = True, max_duration: int = 10) -> None:
         """Opens the inventory using the 'target inventory' keybind by default.

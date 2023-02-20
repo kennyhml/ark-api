@@ -9,7 +9,7 @@ from ..._tools import (await_event, find_center, find_closest_pixel,
 from ...exceptions import UnexpectedWheelError, WheelNotAccessibleError
 
 
-class ActionWheel(Ark):
+class lActionWheel(Ark):
     """Represents the action wheel in Ark.
 
     Provides the ability to select certain tabs on the action wheel,

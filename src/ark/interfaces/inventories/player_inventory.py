@@ -37,7 +37,7 @@ class PlayerInventory(Inventory):
     _TRANSFER_ALL = Button((350, 180))
     _DROP_ALL = Button((400, 180))
     _INVENTORY_TAB = Button((199, 117), (110, 90, 180, 60), "inventory.png")
-    _CRAFTING_TAB = Button((1716, 118))
+    _CRAFTING_TAB = Button((1716, 118), (1627, 82, 211, 69), "crafting.png")
 
     _SEARCHBAR = (180, 180)
     _ADDED_REGION = (10, 1000, 220, 80)
