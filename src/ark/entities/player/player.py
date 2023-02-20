@@ -9,11 +9,10 @@ from ..._tools import timedout
 from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ...exceptions import PlayerDidntTravelError, PlayerDiedError
 from ...interfaces.hud_info import HUDInfo
-from ...interfaces.structures.structure import Structure
 from ...interfaces.inventories import PlayerInventory
+from ...interfaces.structures.structure import Structure
 from ...items import Item
 from .._stats import Stats
-
 
 class Player(Ark):
     """Represents the player in ark.

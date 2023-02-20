@@ -7,10 +7,9 @@ from mss.screenshot import ScreenShot  # type: ignore[import]
 from PIL import Image  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
-from ark.exceptions import LogsNotOpenedError
-
 from ..._ark import Ark
 from ...exceptions import LogsNotOpenedError
+from .._button import Button
 from ._config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
                       EVENT_MAPPING, INGORED_TERMS)
 from ._message import TribeLogMessage
@@ -39,6 +38,12 @@ class TribeLog(Ark):
     dino_killed_icon = "https://static.wikia.nocookie.net/arksurvivalevolved_gamepedia/images/6/61/Tek_Bow_%28Genesis_Part_2%29.png/revision/latest?cb=20210603191501"
     LOG_REGION = 1340, 180, 460, 820
 
+    _ONLINE_AXIS = (1159, 330, 76, 729)
+
+    _TOGGLE_ONLINE = Button(
+        (1063, 125), (1035, 97, 52, 52), "toggle_online_members.png"
+    )
+
     def __init__(
         self, alert_webhook: discord.Webhook, log_webhook: discord.Webhook
     ) -> None:
@@ -46,10 +51,36 @@ class TribeLog(Ark):
         self._tribe_log: list[TribeLogMessage] = []
         self.alert_webhook = alert_webhook
         self.log_webhook = log_webhook
+        self._online_members: str | None = None
+
+    @property
+    def online_members(self) -> str:
+        return self._online_members if self._online_members else "?"
 
     def __repr__(self) -> str:
         """A representative string of the log message"""
         return "".join(f"{log_message}\n" for log_message in self._tribe_log)
+
+    def toggle_online_members(self) -> None:
+        assert self._TOGGLE_ONLINE.template and self._TOGGLE_ONLINE.region
+
+        if self.window.locate_template(
+            self._TOGGLE_ONLINE.template, self._TOGGLE_ONLINE.region, confidence=0.8
+        ):
+            return
+        self.click_at(self._TOGGLE_ONLINE.location)
+
+    def get_online_members(self) -> None:
+        self.toggle_online_members()
+        online = len(
+            self.window.locate_all_template(
+                f"{self.PKG_DIR}/assets/interfaces/online.png",
+                region=self._ONLINE_AXIS,
+                confidence=0.7,
+                grayscale=True,
+            )
+        )
+        self._online_members = str(online) if online else "?"
 
     def check_tribelogs(self) -> None:
         """Main tribelog check call.
@@ -63,6 +94,7 @@ class TribeLog(Ark):
         """
         self.open()
         self.window.grab_screen(self.LOG_REGION, "temp/tribelog.png")
+        self.get_online_members()
         self.close()
         Thread(target=self.update_tribelogs, name="Updating tribelogs...").start()
 
@@ -210,8 +242,9 @@ class TribeLog(Ark):
                 # check if the message is already known or if the contents are irrelevant
                 if self.day_is_known(day) or self.content_is_irrelevant(content[1]):
                     continue
-            except: continue
-            
+            except:
+                continue
+
             # new message with relevant contents, create message Object and add it
             # to the new messages
             message = TribeLogMessage(day, *content)
@@ -263,8 +296,8 @@ class TribeLog(Ark):
             )
             or multiple
         )
-        return 
-        
+        return
+
         # send the message
         self.alert_webhook.send(
             content="@everyone" if mention else "",
@@ -430,7 +463,8 @@ class TribeLog(Ark):
 
                 # multiple templates to match, check if any match
                 if any(
-                    self.window.locate_in_image(template, image, confidence=0.8) is not None
+                    self.window.locate_in_image(template, image, confidence=0.8)
+                    is not None
                     for template in DENOISE_MAPPING[rgb]
                 ):
                     return rgb

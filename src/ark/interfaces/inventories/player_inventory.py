@@ -44,7 +44,8 @@ class PlayerInventory(Inventory):
     _ITEM_REGION = (117, 232, 582, 883)
     _UPPER_ITEM_REGION = (117, 230, 568, 191)
     _CAPPED_ICON = (85, 235, 52, 50)
-
+    _YOU = (794,116)
+    
     def __init__(self):
         super().__init__("Player")
 
@@ -127,6 +128,7 @@ class PlayerInventory(Inventory):
             raise MissingItemErrror(item.name)
 
         before = self.count(item)
+        self.click_at(self._YOU, delay=0.2)
         self.click_at(pos)
         self.press(self.keybinds.use)
 
@@ -136,6 +138,7 @@ class PlayerInventory(Inventory):
             raise TimeoutError
 
     def unequip(self, item: Item) -> None:
+        self.click_at(self._YOU, delay=0.2)
         for slot in [
             self.HEAD,
             self.TORSO,
@@ -146,7 +149,6 @@ class PlayerInventory(Inventory):
         ]:
             if not self._slot_has_item(slot, item):
                 continue
-
             self.click_at(get_center(slot))
             self.press(self.keybinds.use)
 

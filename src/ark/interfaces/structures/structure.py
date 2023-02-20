@@ -1,5 +1,5 @@
 from typing import Any, Optional
-import cv2
+import cv2 # type: ignore[import]
 
 from pytesseract import pytesseract as tes  # type: ignore[import]
 

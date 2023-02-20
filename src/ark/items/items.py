@@ -370,3 +370,10 @@ TEK_GAUNTLETS = Item(
     stack_size=1,
     inventory_icon="assets/items/tek_gauntlets.png"
 )
+
+EXO_GLOVES = Item(
+    name="Exo Gloves",
+    search_name="exo gloves",
+    stack_size=1,
+    inventory_icon="assets/items/exo_gauntlets.png"
+)
