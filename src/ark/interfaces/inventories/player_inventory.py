@@ -193,7 +193,7 @@ class PlayerInventory(Inventory):
         Counts the amount of items before pressing 'T' and waits for it to
         change after the press.
         """
-        amount = item.stack_size * 6
+        amount = item.stack_size * stacks
 
         for _ in range(stacks):
             slot = self.find(item)
