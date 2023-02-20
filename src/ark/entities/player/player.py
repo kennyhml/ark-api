@@ -9,10 +9,11 @@ from ..._tools import timedout
 from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ...exceptions import PlayerDidntTravelError, PlayerDiedError
 from ...interfaces.hud_info import HUDInfo
-from ...interfaces.inventories import PlayerInventory
 from ...interfaces.structures.structure import Structure
+from ...interfaces.inventories import PlayerInventory
 from ...items import Item
 from .._stats import Stats
+
 
 class Player(Ark):
     """Represents the player in ark.
@@ -37,7 +38,7 @@ class Player(Ark):
     _HP_BAR = (1882, 1022, 15, 50)
     _HAS_DIED = (630, 10, 590, 80)
     _STAM_BAR = (1850, 955, 70, 65)
-    
+
     @overload
     def __init__(self, *, stats: Stats) -> None:
         ...
