@@ -43,6 +43,7 @@ def _find_relevant_data(server_name: str, data: dict) -> dict:
     for server_data in data["data"]:
         if server_name in server_data["attributes"]["name"]:
             return server_data
+            
     raise LookupError(f"Could not find {server_name} in data {data['data']}]")
 
 

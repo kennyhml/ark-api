@@ -38,7 +38,7 @@ class TribeLog(Ark):
     dino_killed_icon = "https://static.wikia.nocookie.net/arksurvivalevolved_gamepedia/images/6/61/Tek_Bow_%28Genesis_Part_2%29.png/revision/latest?cb=20210603191501"
     LOG_REGION = 1340, 180, 460, 820
 
-    _ONLINE_AXIS = (1159, 330, 76, 729)
+    _ONLINE_AXIS = (1132, 315, 111, 720)
 
     _TOGGLE_ONLINE = Button(
         (1063, 125), (1035, 97, 52, 52), "toggle_online_members.png"
@@ -55,11 +55,17 @@ class TribeLog(Ark):
             log_webhook, adapter=discord.RequestsWebhookAdapter()
         )
         self.user_id = user_id
-        self._online_members: str | None = None
+        self._online_members: int | None = None
 
     @property
     def online_members(self) -> str:
-        return self._online_members if self._online_members else "?"
+        if self._online_members is None:
+            return "?"
+
+        if self._online_members >= 12:
+            return "12+"
+
+        return str(self._online_members)
 
     def __repr__(self) -> str:
         """A representative string of the log message"""
@@ -84,7 +90,7 @@ class TribeLog(Ark):
                 grayscale=True,
             )
         )
-        self._online_members = str(online) if online else "?"
+        self._online_members = online
 
     def check_tribelogs(self) -> None:
         """Main tribelog check call.

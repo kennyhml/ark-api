@@ -14,7 +14,7 @@ class MainMenu(Ark):
         """Returns whether the main menu is currently open."""
         return (
             self.window.locate_template(
-                f"{self.PKG_DIR}/assets/templates/main_menu_options.png",
+                f"{self.PKG_DIR}/assets/interfaces/main_menu_options.png",
                 region=self._OPTIONS,
                 confidence=0.8,
             )
@@ -25,7 +25,7 @@ class MainMenu(Ark):
         """Returns whether the player was disconnected."""
         return (
             self.window.locate_template(
-                f"{self.PKG_DIR}/assets/templates/main_menu_accept.png",
+                f"{self.PKG_DIR}/assets/interfaces/main_menu_accept.png",
                 region=self._ACCEPT,
                 confidence=0.8,
             )
