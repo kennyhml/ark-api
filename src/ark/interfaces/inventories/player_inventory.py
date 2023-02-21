@@ -117,8 +117,14 @@ class PlayerInventory(Inventory):
         # transferred. Before that check that it actually has the slots free
         # we need, if not we need to go back to doing it by row.
         target.search(item)
-        if (target.count(item) + stacks) > 42:
+        self.sleep(0.3)
+
+        stacks_in_target = target.count(item)
+        if (stacks_in_target + stacks) > 42:
             self._transfer_by_rows(item, rows)
+            return
+            
+        if stacks_in_target == stacks:
             return
 
         self._transfer_by_stacks(item, stacks, target)
