@@ -8,6 +8,7 @@ from PIL import Image  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
+from ..._tools import img_to_file
 from ...exceptions import LogsNotOpenedError
 from .._button import Button
 from ._config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
@@ -43,14 +44,18 @@ class TribeLog(Ark):
     _TOGGLE_ONLINE = Button(
         (1063, 125), (1035, 97, 52, 52), "toggle_online_members.png"
     )
+    LAST_LOG: discord.WebhookMessage = None
 
-    def __init__(
-        self, alert_webhook: discord.Webhook, log_webhook: discord.Webhook
-    ) -> None:
+    def __init__(self, alert_webhook: str, log_webhook: str, user_id: str) -> None:
         super().__init__()
         self._tribe_log: list[TribeLogMessage] = []
-        self.alert_webhook = alert_webhook
-        self.log_webhook = log_webhook
+        self.alert_webhook = discord.Webhook.from_url(
+            alert_webhook, adapter=discord.RequestsWebhookAdapter()
+        )
+        self.log_webhook = discord.Webhook.from_url(
+            log_webhook, adapter=discord.RequestsWebhookAdapter()
+        )
+        self.user_id = user_id
         self._online_members: str | None = None
 
     @property
@@ -93,10 +98,11 @@ class TribeLog(Ark):
         Read `update_tribelogs` docstring for more information about the tribelogging.
         """
         self.open()
-        self.window.grab_screen(self.LOG_REGION, "temp/tribelog.png")
+        img = self.window.grab_screen(self.LOG_REGION)
         self.get_online_members()
         self.close()
-        Thread(target=self.update_tribelogs, name="Updating tribelogs...").start()
+
+        Thread(target=self.update_tribelogs, name="Updating tribelogs...", args=(img,)).start()
 
     def is_open(self) -> bool:
         """Checks if the tribelog is open."""
@@ -197,7 +203,7 @@ class TribeLog(Ark):
         """
         return any(term in content for term in INGORED_TERMS)
 
-    def update_tribelogs(self) -> None:
+    def update_tribelogs(self, img: ScreenShot) -> None:
         """Runs a scan on the tribelog snapshot to find all 'Day' occurrences, then
         extracts the message and checks for contents. Adds new messages to the tribelog
         and posts them as alert if they are relevant.
@@ -212,7 +218,10 @@ class TribeLog(Ark):
         Split it up into different tasks, its responsible for too much.
         """
         # sort days from top to bottom by y-coordinate so we can get the message frame
-        log_img = Image.open("temp/tribelog.png")
+        image_array = np.array(img)
+        image_rgb = cv.cvtColor(image_array, cv.COLOR_BGR2RGB)
+        image = Image.fromarray(image_rgb)
+
         day_points = self.get_day_occurrences()
         days_in_order = sorted([day for day in day_points], key=lambda t: t[1])
 
@@ -228,12 +237,12 @@ class TribeLog(Ark):
                 break
             try:
                 # OCR the day and validate it, continue if the day is invalid
-                day = self.get_daytime(log_img.crop(day_region))
+                day = self.get_daytime(image.crop(day_region))
                 if not day:
                     continue
 
                 # OCR the contents, None if its irrelevant
-                content = self.get_message_contents(log_img.crop(message_region))
+                content = self.get_message_contents(image.crop(message_region))
                 if not content:
                     continue
 
@@ -257,13 +266,18 @@ class TribeLog(Ark):
 
         self._tribe_log += reversed(messages)
         self.delete_old_logs()
-        # self.send_to_discord(
-        #     self.log_webhook,
-        #     "Current tribelogs:",
-        #     file="temp/tribelog.png",
-        #     name="Ling Ling Logs",
-        #     avatar="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
-        # )
+
+        file = img_to_file(image)
+        if self.LAST_LOG is not None:
+            self.LAST_LOG.delete()
+            
+        self.LAST_LOG = self.log_webhook.send(
+            content="Current tribelogs:",
+            file=file,
+            username="Ling Ling Logs",
+            avatar_url="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
+            wait=True
+        )
 
     def send_alert(self, message: TribeLogMessage, multiple: bool = False) -> None:
         """Sends an alert to discord with the given message."""
@@ -296,8 +310,6 @@ class TribeLog(Ark):
             )
             or multiple
         )
-        return
-
         # send the message
         self.alert_webhook.send(
             content="@everyone" if mention else "",

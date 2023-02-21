@@ -3,12 +3,15 @@ import math
 import os
 import time
 from inspect import signature
+from io import BytesIO
 from pathlib import Path
 from threading import Thread
 from typing import Any, Callable
 
 import psutil  # type: ignore[import]
 import win32clipboard  # type: ignore[import]
+from discord import File  # type: ignore[import]
+from PIL import Image  # type: ignore[import]
 
 from .exceptions import TerminatedError
 from .state import State
@@ -29,6 +32,14 @@ def state_checker(func: Callable):
     return wrapper
 
 
+def img_to_file(image: Image.Image) -> BytesIO:
+
+    with BytesIO() as image_binary:
+        image.save(image_binary, "PNG")
+        image_binary.seek(0)
+
+        return File(fp=image_binary, filename="image.png")
+        
 def get_filepath(filepath: str) -> str:
     """Validates the given filepath to allow to adjust files to the package
     path as well as loading files from the relative bot files."""
