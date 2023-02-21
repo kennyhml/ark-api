@@ -2,7 +2,6 @@ from ..._ark import Ark
 from ...exceptions import DinoNotMountedError, InventoryNotAccessibleError
 from ...interfaces import ActionWheel, Inventory
 
-
 class Dinosaur(Ark):
     def __init__(self, entity_name, wheel) -> None:
         super().__init__()
@@ -31,7 +30,7 @@ class Dinosaur(Ark):
         except InventoryNotAccessibleError:
             self.action_wheel.activate()
             self.action_wheel.deactivate()
-            self.inventory.open(max_duration=60)
+            self.inventory.open(max_duration=40)
 
     def is_mounted(self) -> bool:
         return (

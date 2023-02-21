@@ -7,7 +7,7 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
 from ..._tools import await_event, get_center, get_filepath, set_clipboard, timedout
-from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL
+from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL, TIMER_FACTOR
 from ...exceptions import (
     InventoryNotAccessibleError,
     InventoryNotClosableError,
@@ -120,6 +120,7 @@ class Inventory(Ark):
             self._contents[item.name] = stacks
         else:
             self._contents[item.name] = self.count(item)
+
     @final
     def locate_button(self, button: Button, **kwargs) -> bool:
         assert button.template is not None and button.region is not None
@@ -130,7 +131,9 @@ class Inventory(Ark):
 
     def is_open(self) -> bool:
         """Checks if the inventory is open."""
-        return self.locate_button(self._INVENTORY_TAB, confidence=0.8) or self.locate_button(self._CRAFTING_TAB, confidence=0.8)
+        return self.locate_button(
+            self._INVENTORY_TAB, confidence=0.8
+        ) or self.locate_button(self._CRAFTING_TAB, confidence=0.8)
 
     def open(self, default_key: bool = True, max_duration: int = 10) -> None:
         """Opens the inventory using the 'target inventory' keybind by default.
@@ -155,7 +158,7 @@ class Inventory(Ark):
             if await_event(self.is_open, max_duration=INVENTORY_OPEN_INTERVAL):
                 break
 
-            if attempts > (max_duration / INVENTORY_OPEN_INTERVAL):
+            if attempts >= (max_duration * TIMER_FACTOR / INVENTORY_OPEN_INTERVAL):
                 raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
         self._await_receiving_remove_inventory()
 
@@ -175,7 +178,7 @@ class Inventory(Ark):
             if await_event(self.is_open, False, max_duration=INVENTORY_CLOSE_INTERVAL):
                 break
 
-            if attempts >= 6:
+            if attempts > (40 * TIMER_FACTOR / INVENTORY_OPEN_INTERVAL):
                 raise InventoryNotClosableError(f"Failed to close {self._name}!")
         self.sleep(0.3)
 

@@ -5,11 +5,15 @@ from typing import Optional, final
 import pyautogui as pg  # type: ignore[import]
 
 from ..._tools import await_event, get_center
-from ...exceptions import (InventoryNotAccessibleError, MissingItemErrror,
-                           NoItemsAddedError)
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    MissingItemErrror,
+    NoItemsAddedError,
+)
 from ...items import Item
 from .._button import Button
 from .inventory import Inventory
+from ...config import TIMER_FACTOR
 
 
 @final
@@ -44,8 +48,8 @@ class PlayerInventory(Inventory):
     _ITEM_REGION = (117, 232, 582, 883)
     _UPPER_ITEM_REGION = (117, 230, 568, 191)
     _CAPPED_ICON = (85, 235, 52, 50)
-    _YOU = (794,116)
-    
+    _YOU = (794, 116)
+
     def __init__(self):
         super().__init__("Player")
 
@@ -67,7 +71,7 @@ class PlayerInventory(Inventory):
 
     def await_items_added(self, item: Item | str) -> None:
         """Waits for items to be added to the inventory"""
-        if not await_event(self.received_item, max_duration=30):
+        if not await_event(self.received_item, max_duration=30 * TIMER_FACTOR):
             raise NoItemsAddedError(item.name if isinstance(item, Item) else item)
 
     def transfer(
@@ -133,7 +137,9 @@ class PlayerInventory(Inventory):
         self.press(self.keybinds.use)
 
         if not await_event(
-            lambda: before != self.count(item), max_duration=30, ignore_annotation=True
+            lambda: before != self.count(item),
+            max_duration=30 * TIMER_FACTOR,
+            ignore_annotation=True,
         ):
             raise TimeoutError
 
@@ -155,7 +161,7 @@ class PlayerInventory(Inventory):
             if not await_event(
                 lambda: self._slot_has_item(slot, item),
                 False,
-                max_duration=30,
+                max_duration=30 * TIMER_FACTOR,
                 ignore_annotation=True,
             ):
                 raise TimeoutError

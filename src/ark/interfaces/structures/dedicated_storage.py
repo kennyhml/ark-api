@@ -6,6 +6,7 @@ from ..._tools import await_event
 from ...items import Item
 from ..inventories import DedicatedStorageInventory
 from .structure import Structure
+from ...config import TIMER_FACTOR
 
 
 @final
@@ -26,7 +27,7 @@ class TekDedicatedStorage(Structure):
     @overload
     def deposit(self, items: list[Item], get_amount: Literal[False]) -> None:
         ...
-        
+
     @overload
     def deposit(self, items: list[Item], get_amount: Literal[True]) -> tuple[Item, int]:
         ...
@@ -121,5 +122,7 @@ class TekDedicatedStorage(Structure):
                 return
 
             attempts += 1
-            if attempts >= 10:
-                raise NoItemsDepositedError("Failed to deposit after 30 seconds!")
+            if attempts >= (10 * TIMER_FACTOR):
+                raise NoItemsDepositedError(
+                    f"Failed to deposit after {(10 * TIMER_FACTOR) * 3} seconds!"
+                )

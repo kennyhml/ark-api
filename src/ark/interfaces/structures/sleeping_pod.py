@@ -2,6 +2,7 @@ import time
 from typing import final
 
 from ..._tools import timedout
+from ...config import TIMER_FACTOR
 from ...entities.player import Player
 from ..spawn_screen import SpawnScreen
 from ..wheels import TekPodWheel
@@ -44,7 +45,7 @@ class TekSleepingPod(Structure):
         water_duration = player.stats.water / 2.5
         food_duration = player.stats.food / 2.5
 
-        max_duration = max(hp_duration, water_duration, food_duration)
+        max_duration = max(hp_duration, water_duration, food_duration) * TIMER_FACTOR
         start = time.time()
         while not all(
             (

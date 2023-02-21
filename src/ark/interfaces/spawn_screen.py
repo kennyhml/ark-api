@@ -6,7 +6,7 @@ from .._ark import Ark
 from .._tools import await_event, get_center
 from ..exceptions import (BedNotAccessibleError, BedNotFoundError,
                           PlayerDidntTravelError)
-
+from ..config import TIMER_FACTOR
 
 class SpawnScreen(Ark):
     """Represents the spawn screen in Ark.
@@ -67,7 +67,7 @@ class SpawnScreen(Ark):
                 self.click_at(position, delay=0.5)
                 self.spawn()
 
-                if await_event(self._is_travelling, max_duration=15):
+                if await_event(self._is_travelling, max_duration=15 * TIMER_FACTOR):
                     self.sleep(2)
                     return
                     
