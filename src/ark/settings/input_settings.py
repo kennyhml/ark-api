@@ -9,6 +9,7 @@ import dacite
 
 from .. import config
 
+
 @dataclass
 class InputSettings:
     """Represents the Input.ini"""
@@ -34,7 +35,7 @@ class InputSettings:
     hotbar_7: str
     hotbar_8: str
     hotbar_9: str
-    
+
     @staticmethod
     def load(path: Optional[str] = None) -> InputSettings:
         """Loads the settings from input.ini, using the `ARK_PATH` provided
@@ -45,7 +46,30 @@ class InputSettings:
         with open(path) as f:
             contents = f.readlines()
 
-        settings: dict[str, float | bool | str | Path] = {}
+        settings: dict[str, float | bool | str | Path] = {
+            "console": "tab",
+            "crouch": "c",
+            "drop": "o",
+            "inventory": "i",
+            "prone": "x",
+            "target_inventory": "f",
+            "toggle_hud": "backspace",
+            "hud_info": "h",
+            "use": "e",
+            "logs": "l",
+            "transfer": "t",
+            "hotbar_0": "0",
+            "hotbar_1": "1",
+            "hotbar_2": "2",
+            "hotbar_3": "3",
+            "hotbar_4": "4",
+            "hotbar_5": "5",
+            "hotbar_6": "6",
+            "hotbar_7": "7",
+            "hotbar_8": "8",
+            "hotbar_9": "9",
+        }
+
         settings["path"] = Path(path)
 
         for line in contents:
@@ -99,7 +123,18 @@ _KEY_MAP = {
     "UseItem8": "hotbar_8",
     "UseItem9": "hotbar_9",
     "UseItem10": "hotbar_0",
-    "TransferItem": "transfer"
+    "TransferItem": "transfer",
 }
 
-_REPLACE = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+_REPLACE = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+]
