@@ -221,7 +221,7 @@ class TribeLog(Ark):
         image_rgb = cv.cvtColor(image_array, cv.COLOR_BGR2RGB)
         image = Image.fromarray(image_rgb)
 
-        day_points = self.get_day_occurrences()
+        day_points = self.get_day_occurrences(image)
         days_in_order = sorted([day for day in day_points], key=lambda t: t[1])
 
         messages = []
@@ -317,11 +317,10 @@ class TribeLog(Ark):
             username="Ling Ling Look Logs",
         )
 
-    def get_day_occurrences(self) -> list[tuple]:
+    def get_day_occurrences(self, img: Image.Image) -> list[tuple]:
         """Retuns a list of all days, each day being a
         tuple containing top, left, widht and height"""
 
-        img = Image.open("temp/tribelog.png")
         img = img.crop(box=(0, 0, 50, img.height))
 
         return self.window.locate_all_in_image(
