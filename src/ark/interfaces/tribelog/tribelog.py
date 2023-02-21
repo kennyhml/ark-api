@@ -15,7 +15,6 @@ from ._config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
                       EVENT_MAPPING, INGORED_TERMS)
 from ._message import TribeLogMessage
 
-
 class TribeLog(Ark):
     """Represents the ark tribe log. Stores all previous logs as a
     list of `TribeLogMessages`.
@@ -270,7 +269,7 @@ class TribeLog(Ark):
         file = img_to_file(image)
         if self.LAST_LOG is not None:
             self.LAST_LOG.delete()
-            
+
         self.LAST_LOG = self.log_webhook.send(
             content="Current tribelogs:",
             file=file,

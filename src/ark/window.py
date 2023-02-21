@@ -11,8 +11,7 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 from screeninfo import get_monitors  # type: ignore[import]
 
 from ._tools import get_center
-from .config import TESSERACT_PATH
-
+from . import config
 
 class ArkWindow:
     """ARK window handle
@@ -43,7 +42,7 @@ class ArkWindow:
         self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
         self._fullscreen = self.check_fullscreen()
-        tes.tesseract_cmd = TESSERACT_PATH
+        tes.tesseract_cmd = config,config.TESSERACT_PATH
 
     def __str__(self) -> str:
         return (

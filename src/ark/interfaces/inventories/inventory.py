@@ -5,16 +5,13 @@ from typing import Iterable, Literal, Optional, final, overload
 import pyautogui as pg  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
+from ... import config
 from ..._ark import Ark
-from ..._tools import await_event, get_center, get_filepath, set_clipboard, timedout
-from ...config import INVENTORY_CLOSE_INTERVAL, INVENTORY_OPEN_INTERVAL, TIMER_FACTOR
-from ...exceptions import (
-    InventoryNotAccessibleError,
-    InventoryNotClosableError,
-    InventoryNotOpenError,
-    NoItemsAddedError,
-    ReceivingRemoveInventoryTimeout,
-)
+from ..._tools import (await_event, get_center, get_filepath, set_clipboard,
+                       timedout)
+from ...exceptions import (InventoryNotAccessibleError,
+                           InventoryNotClosableError, InventoryNotOpenError,
+                           NoItemsAddedError, ReceivingRemoveInventoryTimeout)
 from ...items import Item
 from .._button import Button
 
@@ -155,10 +152,10 @@ class Inventory(Ark):
             key = self.keybinds.target_inventory if default_key else self.keybinds.use
             self.press(key)
 
-            if await_event(self.is_open, max_duration=INVENTORY_OPEN_INTERVAL):
+            if await_event(self.is_open, max_duration=config.INVENTORY_OPEN_INTERVAL):
                 break
 
-            if attempts >= (max_duration * TIMER_FACTOR / INVENTORY_OPEN_INTERVAL):
+            if attempts >= (max_duration * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL):
                 raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
         self._await_receiving_remove_inventory()
 
@@ -175,10 +172,10 @@ class Inventory(Ark):
             attempts += 1
 
             self.press(self.keybinds.target_inventory)
-            if await_event(self.is_open, False, max_duration=INVENTORY_CLOSE_INTERVAL):
+            if await_event(self.is_open, False, max_duration=config.INVENTORY_CLOSE_INTERVAL):
                 break
 
-            if attempts > (40 * TIMER_FACTOR / INVENTORY_OPEN_INTERVAL):
+            if attempts > (40 * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL):
                 raise InventoryNotClosableError(f"Failed to close {self._name}!")
         self.sleep(0.3)
 

@@ -7,7 +7,7 @@ from typing import Optional
 
 import dacite
 
-from ..config import ARK_PATH
+from .. import config
 
 @dataclass
 class UserSettings:
@@ -34,7 +34,7 @@ class UserSettings:
         """Loads the settings from GameUserSettings.ini, using the `ARK_PATH`
         provided in the configs or an alternatively passed path."""
         if path is None:
-            path = f"{ARK_PATH}\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
+            path = f"{config.ARK_PATH}\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
 
         with open(path) as f:
             contents = f.readlines()

@@ -7,8 +7,7 @@ from typing import Optional
 
 import dacite
 
-from ..config import ARK_PATH
-
+from .. import config
 
 @dataclass
 class InputSettings:
@@ -41,7 +40,7 @@ class InputSettings:
         """Loads the settings from input.ini, using the `ARK_PATH` provided
         in the configs or an alternatively passed path."""
         if path is None:
-            path = f"{ARK_PATH}\Saved\Config\WindowsNoEditor\Input.ini"
+            path = f"{config.ARK_PATH}\Saved\Config\WindowsNoEditor\Input.ini"
 
         with open(path) as f:
             contents = f.readlines()

@@ -4,16 +4,13 @@ from typing import Optional, final
 
 import pyautogui as pg  # type: ignore[import]
 
+from ... import config
 from ..._tools import await_event, get_center
-from ...exceptions import (
-    InventoryNotAccessibleError,
-    MissingItemErrror,
-    NoItemsAddedError,
-)
+from ...exceptions import (InventoryNotAccessibleError, MissingItemErrror,
+                           NoItemsAddedError)
 from ...items import Item
 from .._button import Button
 from .inventory import Inventory
-from ...config import TIMER_FACTOR
 
 
 @final
@@ -71,7 +68,7 @@ class PlayerInventory(Inventory):
 
     def await_items_added(self, item: Item | str) -> None:
         """Waits for items to be added to the inventory"""
-        if not await_event(self.received_item, max_duration=30 * TIMER_FACTOR):
+        if not await_event(self.received_item, max_duration=30 * config.TIMER_FACTOR):
             raise NoItemsAddedError(item.name if isinstance(item, Item) else item)
 
     def transfer(
@@ -123,7 +120,7 @@ class PlayerInventory(Inventory):
         if (stacks_in_target + stacks) > 42:
             self._transfer_by_rows(item, rows)
             return
-            
+
         if stacks_in_target == stacks:
             return
 
@@ -144,7 +141,7 @@ class PlayerInventory(Inventory):
 
         if not await_event(
             lambda: before != self.count(item),
-            max_duration=30 * TIMER_FACTOR,
+            max_duration=30 * config.TIMER_FACTOR,
             ignore_annotation=True,
         ):
             raise TimeoutError
@@ -167,7 +164,7 @@ class PlayerInventory(Inventory):
             if not await_event(
                 lambda: self._slot_has_item(slot, item),
                 False,
-                max_duration=30 * TIMER_FACTOR,
+                max_duration=30 * config.TIMER_FACTOR,
                 ignore_annotation=True,
             ):
                 raise TimeoutError
