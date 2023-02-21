@@ -42,7 +42,7 @@ class ArkWindow:
         self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
         self._fullscreen = self.check_fullscreen()
-        tes.tesseract_cmd = config,config.TESSERACT_PATH
+        tes.tesseract_cmd = config.TESSERACT_PATH
 
     def __str__(self) -> str:
         return (
