@@ -29,6 +29,7 @@ class UnexpectedWheelError(WheelError):
     def __str__(self) -> str:
         return f"Unexpected wheel accessed. Expected '{self.expected_wheel}', got '{self.got_wheel}'!"
 
+
 class ActionNotFoundError(WheelError):
     """Raised when a wheel action could not be found"""
 
@@ -39,14 +40,12 @@ class ActionNotFoundError(WheelError):
         return f"Failed to select action '{self.action}'!"
 
 
-
 class InterfaceError(Exception):
     """Base class for all interface exceptions"""
 
+
 class TimerNotVisibleError(InterfaceError):
     """Raised when the timer is not visible"""
-
-
 
 
 class BedNotAccessibleError(InterfaceError):
@@ -70,6 +69,13 @@ class InventoryNotOpenError(InventoryError):
 
     def __str__(self) -> str:
         return f"Attempted interaction '{self.action}' with closed inventory!"
+
+
+class UnknownFolderIndexError(InventoryError):
+    """Raised when a folder index is invalid or not determined"""
+
+    def __str__(self) -> str:
+        return f"Failed to find expected folder"
 
 
 class InventoryNotAccessibleError(InventoryError):
@@ -107,6 +113,7 @@ class NoGasolineError(InventoryError):
     def __str__(self) -> str:
         return f"{self.structure} is out of gasoline!"
 
+
 class MissingItemErrror(InventoryError):
     """Raised when an item is missing"""
 
@@ -115,7 +122,6 @@ class MissingItemErrror(InventoryError):
 
     def __str__(self) -> str:
         return f"{self.item} could not be found in the inventory!"
-
 
 
 class PlayerError(Exception):

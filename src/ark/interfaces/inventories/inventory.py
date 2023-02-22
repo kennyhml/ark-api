@@ -11,7 +11,8 @@ from ..._tools import (await_event, get_center, get_filepath, set_clipboard,
                        timedout)
 from ...exceptions import (InventoryNotAccessibleError,
                            InventoryNotClosableError, InventoryNotOpenError,
-                           NoItemsAddedError, ReceivingRemoveInventoryTimeout)
+                           NoItemsAddedError, ReceivingRemoveInventoryTimeout,
+                           UnknownFolderIndexError)
 from ...items import Item
 from .._button import Button
 
@@ -55,7 +56,7 @@ class Inventory(Ark):
         (x, y, 93, 93) for y in range(232, 883, 93) for x in range(1243, 1708 + 93, 93)
     ]
 
-    _FOLDERS = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH"]
+    _FOLDERS = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH", "III", "JJJ", "KKK"]
 
     _FOLDER_VIEW = Button((1663, 188), (1632, 158, 61, 56), "folder_view.png")
     _SHOW_ENGRAMS = Button((1716, 189), (1690, 160, 51, 51), "show_engrams.png")
@@ -522,13 +523,13 @@ class Inventory(Ark):
         for _ in range(3):
             for index, option in enumerate(self._FOLDERS, start=1):
                 if self.window.locate_template(
-                    f"templates/folder_{option}.png",
+                    f"{self.PKG_DIR}/assets/interfaces/folder_{option}.png",
                     region=(1240, 290, 55, 34),
                     confidence=0.9,
                 ):
                     return index
             self.sleep(0.5)
-        raise LookupError("Folder index not found!")
+        raise UnknownFolderIndexError
 
     def create_folder(self, name: str) -> None:
         """Creates a folder in the inventory at the classes folder button"""
