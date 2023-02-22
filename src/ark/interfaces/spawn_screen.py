@@ -4,10 +4,10 @@ import pyautogui  # type:ignore[import]
 
 from .._ark import Ark
 from .._tools import await_event, get_center
-from ..exceptions import (BedNotAccessibleError, BedNotFoundError,
-                          PlayerDidntTravelError)
+from ..exceptions import BedNotAccessibleError, BedNotFoundError, PlayerDidntTravelError
 
 from .. import config
+
 
 class SpawnScreen(Ark):
     """Represents the spawn screen in Ark.
@@ -21,6 +21,7 @@ class SpawnScreen(Ark):
     SPAWN_BUTTON = (731, 978)
 
     _BEDS_REGION = (160, 70, 1050, 880)
+    _BED_NAME_AREA = (624, 967, 250, 25)
 
     def spawn(self) -> None:
         """Clicks the spawn button"""
@@ -50,7 +51,7 @@ class SpawnScreen(Ark):
     def travel_to(self, bed_name: str) -> None:
         """Travels to a bed given it's name. If the spawn screen is not
         already open, it will be opened first.
-        
+
         Parameters
         ----------
         name :class:`str`:
@@ -59,21 +60,36 @@ class SpawnScreen(Ark):
         self.open()
         self.search(bed_name)
 
-        for _ in range(3):
+        position = self._find_bed() or self._find_x()
+        if position is None:
+            raise BedNotFoundError(f"Could not find '{bed_name}'!")
+
+        self.click_at(position, delay=0.5)
+        self.sleep(0.5)
+
+        attempts = 0
+        while not self._bed_is_selected():
+            self.click_at(position, delay=0.5)
+            if await_event(self._bed_is_selected, max_duration=1):
+                break
+
+            attempts += 1
+            if attempts >= 2:
+                raise BedNotFoundError(f"Could not select '{bed_name}'!")
+
+            self.search(bed_name)
             position = self._find_bed() or self._find_x()
-            if position is None:
-                raise BedNotFoundError(f"Could not find {bed_name}!")
 
-            try:
-                self.click_at(position, delay=0.5)
-                self.spawn()
+        if self._spawn_region_is_selected():
+            raise BedNotFoundError(
+                f"Could not find '{bed_name}'! Random spawn region was selected!"
+            )
 
-                if await_event(self._is_travelling, max_duration=15 * config.TIMER_FACTOR):
-                    self.sleep(2)
-                    return
-                    
-            except PlayerDidntTravelError:
-                print("Unable to travel! Trying again...")
+        self.spawn()
+        if await_event(self._is_travelling, max_duration=15 * config.TIMER_FACTOR):
+            self.sleep(2)
+            return
+        raise PlayerDidntTravelError(f"Failed to travel to bed '{bed_name}'!")
 
     def can_be_accessed(self) -> bool:
         """Returns whether the bed can be accessed, determined by the
@@ -150,4 +166,24 @@ class SpawnScreen(Ark):
         """Check if we are currently travelling (whitescreen)"""
         return pyautogui.pixelMatchesColor(
             *self.window.convert_point(959, 493), (255, 255, 255), tolerance=10
+        )
+
+    def _bed_is_selected(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/bed_button.png",
+                region=(587, 955, 35, 43),
+                confidence=0.7,
+            )
+            is not None
+        )
+
+    def _spawn_region_is_selected(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/random_location.png",
+                region=self._BED_NAME_AREA,
+                confidence=0.85,
+            )
+            is not None
         )
