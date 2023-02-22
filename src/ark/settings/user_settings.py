@@ -53,10 +53,11 @@ class UserSettings:
                 continue
 
             if "LastJoinedSessionPerCategory" in line and not settings.get("last_server"):
-                session_occurences += 1
                 if session_occurences == settings.get("server_filter"):
                     settings["last_server"] = line.split("=")[1].strip()
                     continue
+                else:
+                    session_occurences += 1
 
             option, value = line.rstrip().split("=")
             setting = _KEY_MAP.get(option)

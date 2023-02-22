@@ -125,6 +125,12 @@ class ArkWindow:
             tools.to_png(img.rgb, img.size, output=path)
             return path
 
+    def set_foreground(self) -> None:
+        try:
+            self._handle.activate()
+        except Exception:
+            pass
+
     def get_boundaries(self) -> dict:
         """Grab the ark window using pygetwindow and create the boundaries.
         If it fails to grab a window it will assume a 1920x1080 window.

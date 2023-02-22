@@ -71,6 +71,7 @@ class Ark:
     @state_checker
     def press(self, key: str) -> None:
         """Presses the given key"""
+        self.window.set_foreground()
         if key not in ["thumbmousebutton2", "gamepad_rightthumbstick"]:
             pg.press(key)
             return
@@ -105,6 +106,7 @@ class Ark:
         button: :class:`str`
             The button to press
         """
+        self.window.set_foreground()
         x, y = pg._normalizeXYArgs(x, y)
         self.move_to(x, y)
         self.sleep(delay)
