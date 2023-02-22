@@ -103,7 +103,7 @@ class InputSettings:
 
 _KEY_MAP = {
     "ConsoleKeys": "console",
-    "CrouchProneToggle": "crouch",
+    "Crouch": "crouch",
     "Prone": "prone",
     "DropItem": "drop",
     "ShowMyInventory": "inventory",

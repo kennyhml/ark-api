@@ -72,7 +72,7 @@ class Ark:
     def press(self, key: str) -> None:
         """Presses the given key"""
         self.window.set_foreground()
-        if key not in ["thumbmousebutton2", "gamepad_rightthumbstick"]:
+        if key not in ["thumbmousebutton2", "thumbmousebutton"]:
             pg.press(key)
             return
 
