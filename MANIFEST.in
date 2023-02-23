@@ -1,6 +1,2 @@
-include src/ark/assets/buffs/*.png
-include src/ark/assets/interfaces/*.png
-include src/ark/assets/items/*.png
-include src/ark/assets/templates/*.png
-include src/ark/assets/tribelog/*.png
-include src/ark/assets/wheels/*.png
+include src/ark/assets/*.png
+include src/ark/assets/items/*/*.png
