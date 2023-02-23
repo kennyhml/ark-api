@@ -21,7 +21,7 @@ class Item:
         return hash(self.name)
 
     def __repr__(self) -> str:
-        return f"Item(name={self.name}, search_name={self.search_name}"
+        return self.name
 
     def __post_init__(self) -> None:
 
