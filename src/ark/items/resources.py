@@ -52,70 +52,70 @@ BLUEGEM = Item(
     name="Blue Crystalized Sap",
     search_name="blue",
     stack_size=100,
-    inventory_icon="assets/item/resources/blue_gem.png",
+    inventory_icon="assets/items/resources/blue_gem.png",
 )
 
 SILK = Item(
     name="Silk",
     search_name="silk",
     stack_size=200,
-    inventory_icon="assets/item/resources/silk.png",
+    inventory_icon="assets/items/resources/silk.png",
 )
 
 CLAY = Item(
     name="Clay",
     search_name="clay",
     stack_size=100,
-    inventory_icon="assets/item/resources/clay.png",
+    inventory_icon="assets/items/resources/clay.png",
 )
 
 OIL = Item(
     name="Oil",
     search_name="oil",
     stack_size=100,
-    inventory_icon="assets/item/resources/oil.png",
+    inventory_icon="assets/items/resources/oil.png",
 )
 
 GASBALL = Item(
     name="Congealed Gas Balls",
     search_name="gas ball",
     stack_size=100,
-    inventory_icon="assets/item/resources/gasball.png"
+    inventory_icon="assets/items/resources/gasball.png"
 )
 
 SULFUR = Item(
     name="Sulfur",
     search_name="sulfur",
     stack_size=100,
-    inventory_icon="assets/item/resources/sulfur.png",
+    inventory_icon="assets/items/resources/sulfur.png",
 )
 
 METAL = Item(
     name="Metal",
     search_name="metal",
     stack_size=200,
-    inventory_icon="assets/item/resources/metal.png",
+    inventory_icon="assets/items/resources/metal.png",
 )
 
 REDGEM = Item(
     name="Red Crystalized Sap",
     search_name="red",
     stack_size=100,
-    inventory_icon="assets/item/resources/red_gem.png",
+    inventory_icon="assets/items/resources/red_gem.png",
 )
 
 OBSIDIAN = Item(
     name="Obsidian",
     search_name="obsidian",
     stack_size=100,
-    inventory_icon="assets/item/resources/obsidian.png",
+    inventory_icon="assets/items/resources/obsidian.png",
 )
 
 SAP = Item(
     name="Sap",
     search_name="sap",
     stack_size=100,
-    inventory_icon="assets/item/resources/sap.png"
+    inventory_icon="assets/items/resources/sap.png"
 
 )   
 
@@ -185,11 +185,18 @@ HIDE = Item(
     inventory_icon="assets/items/resources/hide.png",
 )
 
-POLYMER = Item(
+HARD_POLYMER = Item(
     name="Polymer",
     search_name="poly",
     stack_size=100,
-    inventory_icon="assets/items/resources/poly.png",
+    inventory_icon="assets/items/resources/polymer.png",
+)
+
+ORGANIC_POLYMER = Item(
+    name="Organic Polymer",
+    search_name="poly",
+    stack_size=20,
+    inventory_icon="assets/items/resources/organic_polymer.png",
 )
 
 GASOLINE = Item(
@@ -257,13 +264,6 @@ Y_TRAP = Item(
     inventory_icon="assets/items/resources/ytrap.png",
     added_text="assets/items/y_trap_added.png",
     added_icon="assets/items/plant_species_y_trap.png",
-)
-
-PELLET = Item(
-    name="Snow Owl Pellet",
-    search_name="pellet",
-    stack_size=1,
-    inventory_icon="assets/items/resources/pellet.png",
 )
 
 GACHA_CRYSTAL = Item(

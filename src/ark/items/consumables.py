@@ -1,4 +1,4 @@
-from items import Item
+from .item import Item
 
 MEJOBERRY = Item(
     name="Mejoberry",
@@ -61,4 +61,11 @@ SPOILED_MEAT = Item(
     search_name="spoiled",
     stack_size=100,
     inventory_icon="assets/items/consumables/spoiled_meat.png",
+)
+
+PELLET = Item(
+    name="Snow Owl Pellet",
+    search_name="pellet",
+    stack_size=1,
+    inventory_icon="assets/items/consumables/pellet.png",
 )
