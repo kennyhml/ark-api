@@ -1,2 +1,6 @@
 from .item import Item
-from .items import *
+from .armor import *
+from .consumables import *
+from .resources import *
+from .structures import *
+from .weapons import *
