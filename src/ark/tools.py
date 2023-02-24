@@ -52,7 +52,7 @@ def break_into_components(recipe: dict[Item, int]) -> dict[Item, int]:
 
 def compute_crafting_plan(
     item_to_craft: Item, available_materials: dict[Item, int]
-) -> tuple[int, dict[Item, int]]:
+) -> tuple[int, dict[Item, int], dict[Item, int]]:
     """Computes how many of an item can be crafted given an dictionary of
     available materials. The item must have a `recipe` defined. When computing
     the total possible crafts, crafting sub-components is taken into consideation.
@@ -73,9 +73,9 @@ def compute_crafting_plan(
 
     Returns
     -------
-    `tuple[int, dict[Item, int]]`:
-        The maxium number of items that can be crafted and the sub-compononents
-        that need to be crafted beforehand.
+    `tuple[int, dict[Item, int], dict[Item, int]]`:
+        The maxium number of items that can be crafted, the sub-components
+        that need to be crafted and the total cost.
     """
     if item_to_craft.recipe is None:
         raise ValueError(f"{item_to_craft.name} cannot be crafted.")
@@ -93,11 +93,18 @@ def compute_crafting_plan(
         can_craft = round(amount * craftable_right_away)
         cost[item] += can_craft
         available_materials[item] -= can_craft
-
+    pcost = cost.copy()
     extra_crafts, sub_components_to_craft = _can_craft(
-        item_to_craft, available_materials
+        item_to_craft, available_materials, cost
     )
-    return math.floor(extra_crafts + craftable_right_away), sub_components_to_craft
+    if not extra_crafts:
+        cost = pcost
+
+    return (
+        math.floor(extra_crafts + craftable_right_away),
+        sub_components_to_craft,
+        cost,
+    )
 
 
 def _compute_craftable_instantly(
@@ -114,7 +121,11 @@ def _compute_craftable_instantly(
 
 
 def _can_craft(
-    item: Item, available: dict[Item, int], amount=1, components_to_craft=None
+    item: Item,
+    available: dict[Item, int],
+    cost: dict[Item, int],
+    amount=1,
+    components_to_craft=None,
 ) -> tuple[int, dict[Item, int]]:
     assert item.recipe is not None
 
@@ -127,13 +138,14 @@ def _can_craft(
         for component, amount_needed in item.recipe.items():
             if amount_needed <= available.get(component, 0):
                 available[component] -= amount_needed
+                cost[component] = cost.get(component, 0) + amount_needed
                 continue
 
             elif component.recipe is None:
                 return crafts, components_to_craft
 
             craftable, _ = _can_craft(
-                component, available, amount_needed, components_to_craft
+                component, available, cost, amount_needed, components_to_craft
             )
             if not craftable or craftable != amount_needed:
                 return crafts, components_to_craft
