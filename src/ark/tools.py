@@ -135,9 +135,10 @@ def _can_craft(
             craftable, _ = _can_craft(
                 component, available, amount_needed, components_to_craft
             )
-            if not craftable:
+            if not craftable or craftable != amount_needed:
                 return crafts, components_to_craft
             else:
+
                 components_to_craft[component] = (
                     components_to_craft.get(component, 0) + craftable
                 )

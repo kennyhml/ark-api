@@ -66,3 +66,19 @@ def test_deep_layer_crafting() -> None:
     amount, plan = tools.compute_crafting_plan(items.HEAVY_AUTO_TURRET, available)
     assert amount == 3
     assert plan == {items.ELECTRONICS: 740, items.AUTO_TURRET: 3}
+
+
+def test_amount_flattened() -> None:
+    available = {
+        items.SILICA_PEARL: 5211,
+        items.PASTE: 2600,
+        items.METAL_INGOT: 8757,
+        items.ELECTRONICS: 1100,
+        items.CRYSTAL: 10000,
+        items.HIDE: 20000,
+        items.ORGANIC_POLYMER: 10000,
+    }
+    amount, plan = tools.compute_crafting_plan(items.HEAVY_AUTO_TURRET, available)
+
+    assert amount == 10
+    assert plan == {items.AUTO_TURRET: 10, items.ELECTRONICS: 1620}
