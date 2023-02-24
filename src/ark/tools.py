@@ -80,6 +80,8 @@ def compute_crafting_plan(
     if item_to_craft.recipe is None:
         raise ValueError(f"{item_to_craft.name} cannot be crafted.")
 
+    available_materials = available_materials.copy()
+
     cost = {item: 0 for item in item_to_craft.recipe}
     _complement_available_mats(available_materials, item_to_craft.recipe)
 
