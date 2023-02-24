@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass
 from typing import Optional
 
-from .._tools import get_filepath
+from .._helpers import get_filepath
 
 
 @dataclass
@@ -13,10 +15,10 @@ class Item:
     search_name: str
     stack_size: int
     inventory_icon: str
+    recipe: Optional[dict[Item, int]] = None
     added_icon: Optional[str] = None
     added_text: Optional[str] = None
-    min_len_deposits: Optional[int] = None
-
+    
     def __hash__(self) -> int:
         return hash(self.name)
 

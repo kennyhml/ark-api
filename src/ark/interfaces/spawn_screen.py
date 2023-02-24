@@ -3,7 +3,7 @@ import numpy as np
 import pyautogui  # type:ignore[import]
 
 from .._ark import Ark
-from .._tools import await_event, get_center
+from .._helpers import await_event, get_center
 from ..exceptions import BedNotAccessibleError, BedNotFoundError, PlayerDidntTravelError
 
 from .. import config

@@ -6,7 +6,7 @@ import pyautogui as pg  # type: ignore[import]
 import pydirectinput  # type: ignore[import]
 from pynput.mouse import Button, Controller  # type: ignore[import]
 
-from ._tools import state_checker
+from ._helpers import state_checker
 from .settings import InputSettings, UserSettings
 from .window import ArkWindow
 

@@ -2,7 +2,7 @@ from typing import Literal, final, overload
 
 from ark.exceptions import InventoryNotAccessibleError, NoItemsDepositedError
 
-from ..._tools import await_event
+from ..._helpers import await_event
 from ...items import Item
 from ..inventories import DedicatedStorageInventory
 from .structure import Structure

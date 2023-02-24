@@ -1,4 +1,5 @@
 from .item import Item
+from .resources import PASTE, METAL_INGOT, CRYSTAL, ELECTRONICS, ORGANIC_POLYMER
 
 ASSAULT_RIFLE = Item(
     name="Assault Rifle",
@@ -98,3 +99,28 @@ BOW = Item(
     inventory_icon="assets/items/weapons/bow.png",
 )
 
+C4_DETONATOR = Item(
+    name="C4 Remote Detonator",
+    search_name="det",
+    stack_size=1,
+    inventory_icon="assets/items/weapons/c4_detonator.png",
+    recipe={
+        PASTE: 15,
+        CRYSTAL: 10,
+        ELECTRONICS: 50,
+        METAL_INGOT: 10,
+        ORGANIC_POLYMER: 20,
+    },
+)
+
+ROCKET_LAUNCHER = Item(
+    name="Rocket Launcher",
+    search_name="rocket launcher",
+    stack_size=1,
+    inventory_icon="assets/items/weapons/rocket_launcher.png",
+    recipe={
+        PASTE: 60,
+        METAL_INGOT: 50,
+        ORGANIC_POLYMER: 80,
+    },
+)

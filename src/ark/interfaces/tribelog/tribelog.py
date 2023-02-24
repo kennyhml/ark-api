@@ -8,7 +8,7 @@ from PIL import Image  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import img_to_file
+from ..._helpers import img_to_file
 from ...exceptions import LogsNotOpenedError
 from .._button import Button
 from ._config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
@@ -238,7 +238,6 @@ class TribeLog(Ark):
                 message_region = self.grab_message_region(box, days_in_order[i])
 
             except IndexError:
-                print("Reached the last message!")
                 break
             try:
                 # OCR the day and validate it, continue if the day is invalid
@@ -250,8 +249,6 @@ class TribeLog(Ark):
                 content = self.get_message_contents(image.crop(message_region))
                 if not content:
                     continue
-
-                print(f"Found {day} with contents {content}")
 
                 # check if the message is already known or if the contents are irrelevant
                 if self.day_is_known(day) or self.content_is_irrelevant(content[1]):

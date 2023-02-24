@@ -5,7 +5,7 @@ import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._tools import timedout
+from ..._helpers import timedout
 from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ...exceptions import PlayerDidntTravelError, PlayerDiedError
 from ...interfaces.hud_info import HUDInfo

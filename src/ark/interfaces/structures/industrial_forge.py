@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, Optional, final
 
-from ..._tools import format_seconds
+from ..._helpers import format_seconds
 from .structure import Structure
 
 

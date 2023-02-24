@@ -7,7 +7,7 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ... import config
 from ..._ark import Ark
-from ..._tools import (await_event, get_center, get_filepath, set_clipboard,
+from ..._helpers import (await_event, get_center, get_filepath, set_clipboard,
                        timedout)
 from ...exceptions import (InventoryNotAccessibleError,
                            InventoryNotClosableError, InventoryNotOpenError,
@@ -69,7 +69,7 @@ class Inventory(Ark):
 
     _SEARCHBAR = (1300, 190)
     _ADDED_REGION = (40, 1020, 360, 60)
-    _ITEM_REGION = (1243, 232, 1708, 883)
+    _ITEM_REGION = (1243, 232, 562, 710)
     _UPPER_ITEM_REGION = (1240, 230, 568, 191)
     _SLOTS_REGION = (1074, 500, 60, 23)
     _REMOTE_INVENTORY = (1346, 563, 345, 43)

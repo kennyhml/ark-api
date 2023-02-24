@@ -1,3 +1,4 @@
+from ctypes.wintypes import CHAR
 from .item import Item
 
 DUST = Item(
@@ -7,7 +8,6 @@ DUST = Item(
     inventory_icon="assets/items/resources/dust.png",
     added_icon="assets/items/dust_deposited.png",
     added_text="assets/items/dust_text.png",
-    min_len_deposits=4,
 )
 
 BLACK_PEARL = Item(
@@ -17,7 +17,6 @@ BLACK_PEARL = Item(
     inventory_icon="assets/items/resources/black_pearl.png",
     added_icon="assets/items/black_pearl_deposited.png",
     added_text="assets/items/black_pearl_text.png",
-    min_len_deposits=2,
 )
 
 CRYSTAL = Item(
@@ -80,7 +79,7 @@ GASBALL = Item(
     name="Congealed Gas Balls",
     search_name="gas ball",
     stack_size=100,
-    inventory_icon="assets/items/resources/gasball.png"
+    inventory_icon="assets/items/resources/gasball.png",
 )
 
 SULFUR = Item(
@@ -115,9 +114,8 @@ SAP = Item(
     name="Sap",
     search_name="sap",
     stack_size=100,
-    inventory_icon="assets/items/resources/sap.png"
-
-)   
+    inventory_icon="assets/items/resources/sap.png",
+)
 
 METAL_INGOT = Item(
     name="Ingot",
@@ -169,15 +167,6 @@ SILICA_PEARL = Item(
     added_text="assets/items/pearls_text.png",
 )
 
-ELECTRONICS = Item(
-    name="Electronics",
-    search_name="electronics",
-    stack_size=100,
-    inventory_icon="assets/items/resources/electronics.png",
-    added_icon="assets/items/electronics_icon.png",
-    added_text="assets/items/electronics_text.png",
-)
-
 HIDE = Item(
     name="Hide",
     search_name="hide",
@@ -216,6 +205,7 @@ CHARCOAL = Item(
 SPARKPOWDER = Item(
     name="Sparkpowder",
     search_name="spark",
+    recipe={FLINT: 2, STONE: 1},
     stack_size=100,
     inventory_icon="assets/items/resources/sparkpowder.png",
 )
@@ -223,6 +213,7 @@ SPARKPOWDER = Item(
 GUNPOWDER = Item(
     name="Gunpowder",
     search_name="gunpowder",
+    recipe={SPARKPOWDER: 1, CHARCOAL: 1},
     stack_size=100,
     inventory_icon="assets/items/resources/gunpowder.png",
 )
@@ -271,4 +262,14 @@ GACHA_CRYSTAL = Item(
     search_name="gacha",
     stack_size=1,
     inventory_icon="assets/items/resources/gacha_crystal.png",
+)
+
+ELECTRONICS = Item(
+    name="Electronics",
+    search_name="electronics",
+    stack_size=100,
+    recipe={SILICA_PEARL: 3, METAL_INGOT: 1},
+    inventory_icon="assets/items/resources/electronics.png",
+    added_icon="assets/items/electronics_icon.png",
+    added_text="assets/items/electronics_text.png",
 )

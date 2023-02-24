@@ -5,7 +5,7 @@ from typing import Optional, final
 import pyautogui as pg  # type: ignore[import]
 
 from ... import config
-from ..._tools import await_event, get_center
+from ..._helpers import await_event, get_center
 from ...exceptions import (InventoryNotAccessibleError, MissingItemErrror,
                            NoItemsAddedError)
 from ...items import Item

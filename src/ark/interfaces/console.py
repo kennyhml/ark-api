@@ -1,7 +1,7 @@
 import pyautogui as pg  # type: ignore[import]
 
 from .._ark import Ark
-from .._tools import await_event
+from .._helpers import await_event
 
 
 class Console(Ark):

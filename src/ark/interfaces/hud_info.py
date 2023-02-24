@@ -2,7 +2,7 @@ import pyautogui  # type:ignore[import]
 from pytesseract import pytesseract as tes  # type:ignore[import]
 
 from .._ark import Ark
-from .._tools import await_event
+from .._helpers import await_event
 from ..exceptions import InterfaceError, TimerNotVisibleError
 
 

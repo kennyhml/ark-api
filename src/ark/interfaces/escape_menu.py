@@ -1,7 +1,7 @@
 import time
 
 from .._ark import Ark
-from .._tools import await_event, timedout
+from .._helpers import await_event, timedout
 from ..exceptions import InterfaceError
 
 

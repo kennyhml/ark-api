@@ -10,7 +10,7 @@ from PIL import Image, ImageOps
 from pytesseract import pytesseract as tes  # type: ignore[import]
 from screeninfo import get_monitors  # type: ignore[import]
 
-from ._tools import get_center
+from ._helpers import get_center
 from . import config
 
 class ArkWindow:
