@@ -273,3 +273,10 @@ ELECTRONICS = Item(
     added_icon="assets/items/electronics_icon.png",
     added_text="assets/items/electronics_text.png",
 )
+
+ELEMENT = Item(
+    name="Element",
+    search_name="element",
+    stack_size=100,
+    inventory_icon="assets/items/resources/element.png",
+)

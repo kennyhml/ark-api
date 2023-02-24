@@ -48,6 +48,7 @@ def test_craft_2layers_without_subcomponents() -> None:
     assert not plan
     assert not any(v for v in cost.values())
 
+
 def test_raise_error_no_recipe_item() -> None:
 
     with pytest.raises(ValueError):
@@ -74,7 +75,7 @@ def test_deep_layer_crafting() -> None:
         items.METAL_INGOT: 2150,
         items.ORGANIC_POLYMER: 190,
         items.SILICA_PEARL: 2010,
-        items.AUTO_TURRET: 1
+        items.AUTO_TURRET: 1,
     }
 
     available[items.AUTO_TURRET] = 0
@@ -89,8 +90,9 @@ def test_deep_layer_crafting() -> None:
         items.METAL_INGOT: 2360,
         items.ORGANIC_POLYMER: 210,
         items.SILICA_PEARL: 2220,
-        items.AUTO_TURRET: 0
+        items.AUTO_TURRET: 0,
     }
+
 
 def test_amount_flattened() -> None:
     available = {
@@ -112,5 +114,27 @@ def test_amount_flattened() -> None:
         items.METAL_INGOT: 7137,
         items.ORGANIC_POLYMER: 700,
         items.SILICA_PEARL: 5211,
-        items.AUTO_TURRET: 0
+        items.AUTO_TURRET: 0,
+    }
+
+def test_tek_turret() -> None:
+    available = {
+        items.SILICA_PEARL: 5211,
+        items.PASTE: 2600,
+        items.METAL_INGOT: 8757,
+        items.ELECTRONICS: 1100,
+        items.CRYSTAL: 10000,
+        items.HIDE: 20000,
+        items.ORGANIC_POLYMER: 10000,
+        items.ELEMENT: 18
+    }
+    amount, plan, cost = tools.compute_crafting_plan(items.TEK_TURRET, available)
+    assert amount == 6
+    assert not plan
+    assert cost == {
+        items.PASTE: 300,
+        items.ELECTRONICS: 600,
+        items.METAL_INGOT: 600,
+        items.ORGANIC_POLYMER: 300,
+        items.ELEMENT: 18
     }

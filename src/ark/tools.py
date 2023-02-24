@@ -97,14 +97,32 @@ def compute_crafting_plan(
     extra_crafts, sub_components_to_craft = _can_craft(
         item_to_craft, available_materials, cost
     )
+
     if not extra_crafts:
         cost = pcost
+
+    subcomp_order = list(sub_components_to_craft)
+    subcomp_order.sort(key=lambda item: _get_component_depth(item))
+    sub_components_to_craft = {k: sub_components_to_craft[k] for k in subcomp_order}
 
     return (
         math.floor(extra_crafts + craftable_right_away),
         sub_components_to_craft,
         cost,
     )
+
+
+def _get_component_depth(item: Item, depth=0) -> int:
+
+    if item.recipe is None:
+        return depth
+    else:
+        depth += 1
+
+    for item in item.recipe:
+        depth = _get_component_depth(item, depth)
+
+    return depth
 
 
 def _compute_craftable_instantly(

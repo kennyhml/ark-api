@@ -1,5 +1,5 @@
 from .item import Item
-from .resources import ELECTRONICS, METAL_INGOT, ORGANIC_POLYMER, PASTE
+from .resources import ELECTRONICS, METAL_INGOT, ORGANIC_POLYMER, PASTE, ELEMENT
 
 AUTO_TURRET = Item(
     name="Auto Turret",
@@ -28,6 +28,14 @@ TEK_TURRET = Item(
     search_name="tek turret",
     stack_size=1,
     inventory_icon="assets/items/structures/tek_turret.png",
+    recipe={
+        PASTE: 50,
+        ELECTRONICS: 100,
+        METAL_INGOT: 100,
+        ELEMENT: 3,
+        ORGANIC_POLYMER: 50,
+    },
+
 )
 
 BEHEMOTH_GATEWAY = Item(
@@ -82,7 +90,7 @@ METAL_FOUNDATION = Item(
 
 METAL_TRIANGLE = Item(
     name="Metal Triangle Foundation",
-    search_name="metal triangle",
+    search_name="metal triangle foundation",
     stack_size=100,
     inventory_icon="assets/items/structures/metal_triangle.png",
     recipe={METAL_INGOT: 25, PASTE: 8},
