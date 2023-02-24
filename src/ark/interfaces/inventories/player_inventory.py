@@ -121,7 +121,7 @@ class PlayerInventory(Inventory):
             self._transfer_by_rows(item, rows)
             return
 
-        if stacks_in_target == stacks:
+        if stacks_in_target >= stacks:
             return
 
         self._transfer_by_stacks(item, stacks, target)
@@ -212,10 +212,12 @@ class PlayerInventory(Inventory):
             pg.moveTo(slot)
             before = target.count(item)
             self.press(self.keybinds.transfer)
+            try:
+                target._receive_stack(item, before)
+            except NoItemsAddedError:
+                continue
 
-            target._receive_stack(item, before)
             transferred = target.count(item) * item.stack_size
-
             print(f"Transferred {transferred}/{amount}...")
             if amount <= transferred <= amount + 3000:
                 return

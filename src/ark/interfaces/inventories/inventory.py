@@ -444,8 +444,10 @@ class Inventory(Ark):
             if not stack:
                 self.click_at(pos)
             self.press(self.keybinds.transfer)
-
-            self._receive_stack(item, before_take)
+            try:
+                self._receive_stack(item, before_take)
+            except NoItemsAddedError:
+                continue
 
     @overload
     def manage_view_option(
@@ -788,7 +790,7 @@ class Inventory(Ark):
 
         while self.count(item) == before:
             self.sleep(0.05)
-            if timedout(start, 30):
+            if timedout(start, 5):
                 raise NoItemsAddedError(item.name)
 
         print(f"Receiving stack took {time.time() - start}")
