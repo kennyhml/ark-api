@@ -43,9 +43,13 @@ class InputSettings:
         if path is None:
             path = f"{config.ARK_PATH}\Saved\Config\WindowsNoEditor\Input.ini"
 
-        with open(path) as f:
-            contents = f.readlines()
-
+        try:
+            with open(path, encoding="utf-8") as f:
+                contents = f.readlines()
+        except UnicodeDecodeError:
+            with open(path, encoding="utf-16") as f:
+                contents = f.readlines()
+           
         settings: dict[str, float | bool | str | Path] = {
             "console": "tab",
             "crouch": "c",
@@ -71,11 +75,7 @@ class InputSettings:
         }
 
         settings["path"] = Path(path)
-
         for line in contents:
-            if line.startswith("[/Script/Engine.Console]"):
-                break
-
             if not "=" in line:
                 continue
 
@@ -85,7 +85,8 @@ class InputSettings:
             else:
                 pattern = r'ActionName="([^"]+)",Key=([^,]+)'
                 matches = re.search(pattern, line)
-                if not matches:
+
+                if matches is None:
                     continue
 
                 action_name = matches.group(1)
