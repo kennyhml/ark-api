@@ -220,7 +220,7 @@ GUNPOWDER = Item(
 
 ARB = Item(
     name="Advanced Rifle Bullet",
-    search_name="advanced",
+    search_name="advanced rifle bullet",
     stack_size=100,
     inventory_icon="assets/items/resources/arb.png",
     added_icon="assets/items/arb_icon.png",

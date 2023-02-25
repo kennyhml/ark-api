@@ -13,7 +13,7 @@ class ChemistryBench(Structure):
     def __init__(self) -> None:
         super().__init__(
             "Chemistry Bench",
-            "assets/wheels/chem_bench.png",
+            "assets/wheels/chemistry_bench.png",
             craftables=[SPARKPOWDER, GUNPOWDER],
             toggleable=True
         )
