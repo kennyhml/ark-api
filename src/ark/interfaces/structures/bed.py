@@ -13,3 +13,11 @@ class Bed(Structure):
 
     def spawn(self) -> None:
         self.interface.travel_to(self.name)
+
+
+    def lay_down(self) -> None:
+        self.action_wheel.activate()
+        self.action_wheel.select_action((1130, 510), click=False)
+
+    def get_up(self) -> None:
+        self.press(self.keybinds.use)

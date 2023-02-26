@@ -66,6 +66,8 @@ class Inventory(Ark):
     _CRAFTING_TAB = Button((1716, 118), (1627, 82, 211, 69), "crafting.png")
     _INVENTORY_TAB = Button((1322, 118), (1235, 88, 184, 60), "inventory.png")
     _CREATE_FOLDER = Button((1584, 187))
+    _STOP_CRAFTING = Button((1775, 800), (1750, 775, 53, 56), "cancel_craft.png")
+
 
     _SEARCHBAR = (1300, 190)
     _ADDED_REGION = (40, 1020, 360, 60)
@@ -514,6 +516,15 @@ class Inventory(Ark):
             )
             is not None
         )
+
+    @final
+    def is_crafting(self) -> bool:
+        return self.locate_button(self._STOP_CRAFTING, confidence=0.7)
+
+    def stop_crafting(self) -> None:
+        if not self.is_crafting():
+            self.click_at(self._STOP_CRAFTING.location)
+
 
     def select_slot(self, idx: int = 0) -> None:
         """Moves to the first slot"""
