@@ -25,7 +25,7 @@ def test_craft_with_2_layers() -> None:
     assert amount == 15
     assert plan == {items.ELECTRONICS: 750}
     assert cost == {
-        items.PASTE: 240,
+        items.PASTE: 225,
         items.CRYSTAL: 150,
         items.ELECTRONICS: 0,
         items.METAL_INGOT: 900,
@@ -109,11 +109,11 @@ def test_amount_flattened() -> None:
     assert amount == 10
     assert plan == {items.AUTO_TURRET: 10, items.ELECTRONICS: 1620}
     assert cost == {
-        items.PASTE: 2150,
+        items.PASTE: 2000,
         items.ELECTRONICS: 1080,
-        items.METAL_INGOT: 7137,
+        items.METAL_INGOT: 7020,
         items.ORGANIC_POLYMER: 700,
-        items.SILICA_PEARL: 5211,
+        items.SILICA_PEARL: 4860,
         items.AUTO_TURRET: 0,
     }
 

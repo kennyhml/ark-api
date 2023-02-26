@@ -1,6 +1,4 @@
 import math
-from multiprocessing.sharedctypes import Value
-from typing import Optional
 
 import psutil  # type:ignore[import]
 
@@ -93,6 +91,7 @@ def compute_crafting_plan(
         can_craft = round(amount * craftable_right_away)
         cost[item] += can_craft
         available_materials[item] -= can_craft
+
     pcost = cost.copy()
     extra_crafts, sub_components_to_craft = _can_craft(
         item_to_craft, available_materials, cost
@@ -118,10 +117,8 @@ def _get_component_depth(item: Item, depth=0) -> int:
         return depth
     else:
         depth += 1
-
     for item in item.recipe:
         depth = _get_component_depth(item, depth)
-
     return depth
 
 
@@ -142,6 +139,7 @@ def _can_craft(
     item: Item,
     available: dict[Item, int],
     cost: dict[Item, int],
+    thiscraft=None,
     amount=1,
     components_to_craft=None,
 ) -> tuple[int, dict[Item, int]]:
@@ -153,26 +151,38 @@ def _can_craft(
 
     crafts = 0
     while True:
+        if thiscraft is None or master:
+            thiscraft = {}
+
         for component, amount_needed in item.recipe.items():
             if amount_needed <= available.get(component, 0):
                 available[component] -= amount_needed
-                cost[component] = cost.get(component, 0) + amount_needed
+                thiscraft[component] = thiscraft.get(component, 0) + amount_needed
                 continue
 
             elif component.recipe is None:
                 return crafts, components_to_craft
 
             craftable, _ = _can_craft(
-                component, available, cost, amount_needed, components_to_craft
+                component,
+                available,
+                cost,
+                thiscraft,
+                amount_needed,
+                components_to_craft,
             )
             if not craftable or craftable != amount_needed:
                 return crafts, components_to_craft
             else:
-
                 components_to_craft[component] = (
                     components_to_craft.get(component, 0) + craftable
                 )
+
         crafts += 1
+        if master:
+            for material, needed in thiscraft.items():
+                cost[material] = cost.get(material, 0) + needed
+
         if crafts == amount and not master:
             return crafts, components_to_craft
 
