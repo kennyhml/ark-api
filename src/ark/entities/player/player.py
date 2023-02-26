@@ -9,8 +9,8 @@ from ..._helpers import timedout
 from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ...exceptions import PlayerDidntTravelError, PlayerDiedError
 from ...interfaces.hud_info import HUDInfo
+from ...interfaces.inventories import Inventory, PlayerInventory
 from ...interfaces.structures.structure import Structure
-from ...interfaces.inventories import PlayerInventory
 from ...items import Item
 from .._stats import Stats
 
@@ -238,7 +238,7 @@ class Player(Ark):
         """Checks if the player needs to recover"""
         return any(self.has_buff(buff) for buff in [THIRSTY, HUNGRY, BROKEN_BONES])
 
-    def do_drop_script(self, item: Item, target: Structure):
+    def do_drop_script(self, item: Item, target: Inventory):
         """Does the item drop script for the given item in the given structure.
         Used to empty heavy items out of structures that are not dedis. Player
         has to be non crouching and will end up as not crouching.
@@ -257,26 +257,27 @@ class Player(Ark):
         """
         self.crouch()
         self.sleep(0.5)
-        target.open()
 
-        target.inventory.take(item, amount=1)
+        target.open(max_duration=45)
+
+        target.take(item, amount=1)
         self.inventory.await_items_added(item)
         self.sleep(0.3)
 
         self.inventory.drop_all([item])
         self.inventory.search(item)
 
-        while target.inventory.has(item, is_searched=True):
-            target.inventory.transfer_all()
-            target.inventory.search(item)
+        while target.has(item, is_searched=True):
+            target.transfer_all()
+            target.search(item)
             self.sleep(0.2)
 
-            if not target.inventory.has(item, is_searched=True):
+            if not target.has(item, is_searched=True):
                 break
 
             self.inventory.drop(item, search=False)
 
-            target.inventory.search(item)
+            target.search(item)
 
         self.inventory.close()
         self.pick_up_bag()

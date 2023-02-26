@@ -74,7 +74,7 @@ class TekDedicatedStorage(Structure):
             for _ in range(5):
                 if amount := self._get_amount_deposited(item):
                     return item, amount
-        return None
+        return item, 0
 
     def can_be_opened(self) -> bool:
         """Checks if the dedi can be opened by attempting to do so"""

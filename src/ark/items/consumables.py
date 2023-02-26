@@ -69,3 +69,11 @@ PELLET = Item(
     stack_size=1,
     inventory_icon="assets/items/consumables/pellet.png",
 )
+
+
+YTRAP_SEED = Item(
+    name="Plant Species Y Seed",
+    search_name="y seed",
+    stack_size=100,
+    inventory_icon="assets/items/consumables/ytrap_seed.png",
+)
