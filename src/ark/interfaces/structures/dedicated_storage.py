@@ -90,7 +90,7 @@ class TekDedicatedStorage(Structure):
         depositing range of the player."""
         return (
             self.window.locate_template(
-                "templates/deposit_all.png",
+                f"{self.PKG_DIR}/assets/templates/deposit_all.png",
                 region=(0, 0, 1920, 1080),
                 confidence=0.7,
             )
@@ -102,7 +102,7 @@ class TekDedicatedStorage(Structure):
         'x items transferred' text on top of the screen."""
         return (
             self.window.locate_template(
-                "templates/items_deposited.png",
+                f"{self.PKG_DIR}/assets/templates/items_deposited.png",
                 region=self._TRANSFERRED_REGION,
                 confidence=0.75,
             )

@@ -11,9 +11,15 @@ from ..._ark import Ark
 from ..._helpers import img_to_file
 from ...exceptions import LogsNotOpenedError
 from .._button import Button
-from ._config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
-                      EVENT_MAPPING, INGORED_TERMS)
+from ._config import (
+    CONTENTS_MAPPING,
+    DAYTIME_MAPPING,
+    DENOISE_MAPPING,
+    EVENT_MAPPING,
+    INGORED_TERMS,
+)
 from ._message import TribeLogMessage
+
 
 class TribeLog(Ark):
     """Represents the ark tribe log. Stores all previous logs as a
@@ -107,13 +113,17 @@ class TribeLog(Ark):
         self.get_online_members()
         self.close()
 
-        Thread(target=self.update_tribelogs, name="Updating tribelogs...", args=(img,)).start()
+        Thread(
+            target=self.update_tribelogs, name="Updating tribelogs...", args=(img,)
+        ).start()
 
     def is_open(self) -> bool:
         """Checks if the tribelog is open."""
         return (
             self.window.locate_template(
-                "templates/tribe_log.png", region=(1300, 70, 230, 85), confidence=0.8
+                f"{self.PKG_DIR}/assets/interfaces/tribe_log.png",
+                region=(1300, 70, 230, 85),
+                confidence=0.8,
             )
             is not None
         )
@@ -278,7 +288,7 @@ class TribeLog(Ark):
             file=file,
             username="Ling Ling Logs",
             avatar_url="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
-            wait=True
+            wait=True,
         )
 
     def send_alert(self, message: TribeLogMessage, multiple: bool = False) -> None:
@@ -327,7 +337,7 @@ class TribeLog(Ark):
         img = img.crop(box=(0, 0, 50, img.height))
 
         return self.window.locate_all_in_image(
-            "templates/tribelog_day.png", img, confidence=0.8
+            f"{self.PKG_DIR}/assets/tribelog/tribelog_day.png", img, confidence=0.8
         )
 
     def get_daytime(self, image: str | Image.Image | ScreenShot) -> str | None:
@@ -457,7 +467,9 @@ class TribeLog(Ark):
         try:
             # filter out auto-decay
             if self.window.locate_in_image(
-                "templates/tribelog_auto_decay.png", image, confidence=0.8
+                f"{self.PKG_DIR}/assets/tribelog/tribelog_auto_decay.png",
+                image,
+                confidence=0.8,
             ):
                 return None
 
@@ -500,12 +512,16 @@ class TribeLog(Ark):
         A string representing the tek sensor event in the passed image.
         """
         if self.window.locate_in_image(
-            "templates/tribelog_enemy_survivor.png", image, confidence=0.75
+            f"{self.PKG_DIR}/assets/tribelog/tribelog_enemy_survivor.png",
+            image,
+            confidence=0.75,
         ):
             return "an enemy survivor"
 
         if self.window.locate_in_image(
-            "templates/tribelog_enemy_dino.png", image, confidence=0.75
+            f"{self.PKG_DIR}/assets/tribelog/tribelog_enemy_dino.png",
+            image,
+            confidence=0.75,
         ):
             return "an enemy dinosaur"
         # not determined

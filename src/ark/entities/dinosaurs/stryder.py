@@ -21,7 +21,7 @@ class Stryder(Dinosaur):
         Returns the coordinate of the transfer tab as a tuple, or None if not found.
         """
         # grab action wheel region, denoise for orange text
-        img = self.window.grab_screen((470, 80, 980, 900), path="temp/test.png")
+        img = self.window.grab_screen((470, 80, 980, 900))
         mask = self.window.denoise_text(img, (39, 146, 255), 15)
 
         # get the first orange matching pixel

@@ -1,6 +1,6 @@
 from .buff import Buff
 
-HUNGRY = Buff("Hungry", "templates/hungry.png")
-THIRSTY = Buff("Thirsty", "templates/thirsty.png")
-POD_XP = Buff("XP Buff", "templates/pod_buff.png")
-BROKEN_BONES = Buff("Broken Bones", "templates/broken_bones.png")
+HUNGRY = Buff("Hungry", "assets/buffs/hungry.png")
+THIRSTY = Buff("Thirsty", "assets/buffs/thirsty.png")
+POD_XP = Buff("XP Buff", "assets/buffs/pod_buff.png")
+BROKEN_BONES = Buff("Broken Bones", "assets/buffs/broken_bones.png")

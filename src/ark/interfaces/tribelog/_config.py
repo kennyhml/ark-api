@@ -1,3 +1,5 @@
+from ..._ark import Ark
+
 # common tesseract mistakes to account for in any tribelog messages
 # could use regex for it to make it more powerful
 CONTENTS_MAPPING = {
@@ -102,11 +104,11 @@ CONTENTS_MAPPING = {
 # RGB to denoise with if the templates are located in the tribelog message
 DENOISE_MAPPING: dict[tuple[int, int, int], str | list] = {
     (255, 0, 0): [
-        "templates/tribelog_red_your.png",
-        "templates/tribelog_enemy_destroyed.png",
+        f"{Ark.PKG_DIR}/assets/tribelog/tribelog_red_your.png",
+        f"{Ark.PKG_DIR}/assets/tribelog/tribelog_enemy_destroyed.png",
     ],
-    (208, 3, 211): "templates/tribelog_purple_your.png",
-    (158, 76, 76): "templates/tribelog_sensor.png",
+    (208, 3, 211): f"{Ark.PKG_DIR}/assets/tribelog/tribelog_purple_your.png",
+    (158, 76, 76): f"{Ark.PKG_DIR}/assets/tribelog/tribelog_sensor.png",
 }
 
 # Denoise RGB indicating a certain tribelog event
