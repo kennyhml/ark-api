@@ -22,19 +22,26 @@ class UserSettings:
     show_item_tooltips: bool
     auto_chatbox: bool
     toggle_hud: bool
-    menu_transitions: bool
+    disable_menu_transitions: bool
     resolution_x: int
     resolution_y: int
     server_filter: int
     last_server: str
     reverse_logs: bool
+    local_show_all_items: bool
+    remote_show_all_items: bool
+    sort_type: int
+    remote_sort_type: int
+    remote_show_engrams: bool
+    remote_hide_unlearned_engrams: bool
+    in_remote_inventory: bool
 
     @staticmethod
     def load(path: Optional[str] = None) -> UserSettings:
         """Loads the settings from GameUserSettings.ini, using the `ARK_PATH`
         provided in the configs or an alternatively passed path."""
         if path is None:
-            path = f"{config.ARK_PATH}\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
+            path = f"{config.ARK_PATH}\ShooterGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
 
         with open(path) as f:
             contents = f.readlines()
@@ -112,11 +119,18 @@ _KEY_MAP = {
     "bEnableInventoryItemTooltips": "show_item_tooltips",
     "bShowChatBox": "auto_chatbox",
     "bToggleExtendedHUDInfo": "toggle_hud",
-    "bDisableMenuTransitions": "menu_transitions",
+    "bDisableMenuTransitions": "disable_menu_transitions",
     "ResolutionSizeX": "resolution_x",
     "ResolutionSizeY": "resolution_y",
     "LastServerSearchType": "server_filter",
-    "bReverseTribeLogOrder": "reverse_logs"
+    "bReverseTribeLogOrder": "reverse_logs",
+    "bLocalInventoryItemsShowAllItems": "local_show_all_items",
+    "LocalItemSortType": "sort_type",
+    "RemoteItemSortType": "remote_sort_type",
+    "bRemoteInventoryShowEngrams": "remote_show_engrams",
+    "bInventoryHideUnlearnedEngrams": "remote_hide_unlearned_engrams",
+    "bRemoteInventoryCraftingShowAllItems": "remote_show_all_items",
+    "bRemoteInventoryShowCraftables": "in_remote_inventory"
 }
 
 

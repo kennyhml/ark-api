@@ -41,7 +41,7 @@ class InputSettings:
         """Loads the settings from input.ini, using the `ARK_PATH` provided
         in the configs or an alternatively passed path."""
         if path is None:
-            path = f"{config.ARK_PATH}\Saved\Config\WindowsNoEditor\Input.ini"
+            path = f"{config.ARK_PATH}\ShooterGame\Saved\Config\WindowsNoEditor\Input.ini"
 
         try:
             with open(path, encoding="utf-8") as f:

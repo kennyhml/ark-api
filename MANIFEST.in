@@ -1,2 +1,2 @@
-include src/ark/assets/*.png
+include src/ark/assets/*/*.png
 include src/ark/assets/items/*/*.png

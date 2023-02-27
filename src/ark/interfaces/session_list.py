@@ -15,6 +15,7 @@ class SessionList(Ark):
     _FILTERS = {"Official Servers": (369, 863), "Favorites": (373, 925)}
     _SESSION_LIST_REGION = (110, 100, 230, 80)
     _TOP_SERVER_REGION = (90, 200, 430, 90)
+    _JOINING_FAILED = (712, 354, 486, 76)
 
     def refresh(self) -> None:
         """Clicks the refresh button"""
@@ -43,7 +44,13 @@ class SessionList(Ark):
 
         while self.is_open():
             self.join_server()
-            self.sleep(15)
+            self.sleep(45)
+
+            if not self._server_is_ghosting():
+                continue
+
+            self.sleep(300)
+            self.connect(server)
 
     def search_server(self, server: Server) -> None:
         """Searches for the given server, waits for it to pop up.
@@ -54,6 +61,10 @@ class SessionList(Ark):
             The server to search for as a Server object.
         """
         self.click_at(616, 143, delay=0.5)
+        with pg.hold("ctrl"):
+            pg.press("a")
+            pg.press("backspace")
+
         pg.typewrite(server.name, interval=0.01)
         self.press("enter")
         self.sleep(5)
@@ -95,6 +106,16 @@ class SessionList(Ark):
                 f"{self.PKG_DIR}/assets/interfaces/server_favorite.png",
                 region=self._TOP_SERVER_REGION,
                 confidence=0.75,
+            )
+            is not None
+        )
+
+    def _server_is_ghosting(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/joining_failed.png",
+                region=self._JOINING_FAILED,
+                confidence=0.7,
             )
             is not None
         )
