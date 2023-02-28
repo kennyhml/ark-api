@@ -74,6 +74,7 @@ class TekDedicatedStorage(Structure):
             for _ in range(5):
                 if amount := self._get_amount_deposited(item):
                     return item, amount
+                self.sleep(0.1)
         return item, 0
 
     def can_be_opened(self) -> bool:

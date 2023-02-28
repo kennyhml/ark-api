@@ -1,6 +1,6 @@
 from typing import Any, Optional
-import cv2 # type: ignore[import]
 
+import cv2  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
@@ -163,7 +163,7 @@ class Structure(Ark):
 
         # grab the region of interest and apply denoising
         img = self.window.grab_screen(roi, convert=False)
-        img = self.window.denoise_text(img, denoise_rgb=(255, 255, 255), variance=5)
+        img = self.window.denoise_text(img, denoise_rgb=(255, 255, 255), variance=10)
         cv2.imshow("", img)
         cv2.waitKey(1)
         
@@ -196,8 +196,7 @@ class Structure(Ark):
 
         # compute name roi
         text_start_x = icon_pos[0] + icon_pos[2]
-        name_roi = (text_start_x + 130, icon_pos[1], 290, 25)
-
+        name_roi = (text_start_x + 130, icon_pos[1], 290, 40)
         name_text = self.window.locate_template(
             item.added_text,
             region=name_roi,
@@ -209,7 +208,7 @@ class Structure(Ark):
             return None
 
         # get our region of interest (from end of "Removed:" to start of "Element")
-        return (name_roi[0], name_roi[1], int(name_text[0] - name_roi[0]), 25)
+        return (name_roi[0], name_roi[1], int(name_text[0] - name_roi[0]), 40)
 
     def _correct_ocr_mistakes(self, raw: str) -> str:
         """Corrects 'expected' or common tesseract mistakes."""
