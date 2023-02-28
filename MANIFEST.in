@@ -1,2 +1,3 @@
 include src/ark/assets/*/*.png
 include src/ark/assets/items/*/*.png
+include src/ark/py.typed
