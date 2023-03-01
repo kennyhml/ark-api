@@ -38,8 +38,13 @@ class DinoExport:
             ),
         )
         settings: dict[str, str | float] = {}
-        with open(file, encoding="utf-16") as f:
-            contents = f.readlines()
+        try:
+            with open(file, encoding="utf-8") as f:
+                contents = f.readlines()
+                
+        except UnicodeDecodeError:
+            with open(file, encoding="utf-16") as f:
+                contents = f.readlines()
 
         for line in contents:
             line = line.strip()
