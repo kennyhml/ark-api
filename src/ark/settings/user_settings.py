@@ -61,7 +61,7 @@ class UserSettings:
 
             if "LastJoinedSessionPerCategory" in line and not settings.get("last_server"):
                 if session_occurences == settings.get("server_filter"):
-                    settings["last_server"] = line.split("=")[1].strip()
+                    settings["last_server"] = line.split("=")[1].strip().strip('"')
                     continue
                 else:
                     session_occurences += 1
