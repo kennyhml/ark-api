@@ -551,6 +551,13 @@ class Inventory(Ark):
     def has_level_up(self) -> bool:
         return pg.pixelMatchesColor(1161,524, (0,0,0), tolerance=3)
 
+    def level_skill(self, skill: str, times: int) -> None:
+        pos = self.LEVEL_UP_BUTTONS[skill]
+        self.move_to(pos)
+        
+        for _ in range(times):
+            pg.click()
+
     def stop_crafting(self) -> None:
         if not self.is_crafting():
             self.click_at(self._STOP_CRAFTING.location)
