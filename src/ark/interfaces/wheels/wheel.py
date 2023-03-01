@@ -160,6 +160,6 @@ class ActionWheel(Ark):
         self.activate()
         self.select_action((811, 470), click=True)
         self.sleep(1)
-        self.select_action((790, 560), click=True)
+        self.select_action((850, 642), click=True)
 
         self.deactivate()
