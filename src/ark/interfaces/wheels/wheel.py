@@ -155,3 +155,11 @@ class ActionWheel(Ark):
         with pyautogui.hold("e"):
             self.sleep(1)
             return self.is_open()
+
+    def export_data(self) -> None:
+        self.activate()
+        self.select_action((811, 470), click=True)
+        self.sleep(1)
+        self.select_action((790, 560), click=True)
+
+        self.deactivate()

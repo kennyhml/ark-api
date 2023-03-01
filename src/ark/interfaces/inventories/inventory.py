@@ -8,7 +8,7 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 from ... import config
 from ..._ark import Ark
 from ..._helpers import (await_event, get_center, get_filepath, set_clipboard,
-                       timedout)
+                         timedout)
 from ...exceptions import (InventoryNotAccessibleError,
                            InventoryNotClosableError, InventoryNotOpenError,
                            NoItemsAddedError, ReceivingRemoveInventoryTimeout,
@@ -55,8 +55,30 @@ class Inventory(Ark):
     SLOTS = [
         (x, y, 93, 93) for y in range(232, 883, 93) for x in range(1243, 1708 + 93, 93)
     ]
+    LEVEL_UP_BUTTONS = {
+        "health": (1150, 515),
+        "stamina": (1150, 558),
+        "oxygen": (1150, 600),
+        "food": (1151, 645),
+        "weight": (1149, 688),
+        "melee": (1150, 730),
+        "speed": (1151, 773),
+        "crafting": (1149, 818),
+    }
 
-    _FOLDERS = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH", "III", "JJJ", "KKK"]
+    _FOLDERS = [
+        "AAA",
+        "BBB",
+        "CCC",
+        "DDD",
+        "EEE",
+        "FFF",
+        "GGG",
+        "HHH",
+        "III",
+        "JJJ",
+        "KKK",
+    ]
 
     _FOLDER_VIEW = Button((1663, 188), (1632, 158, 61, 56), "folder_view.png")
     _SHOW_ENGRAMS = Button((1716, 189), (1690, 160, 51, 51), "show_engrams.png")
@@ -67,7 +89,7 @@ class Inventory(Ark):
     _INVENTORY_TAB = Button((1322, 118), (1235, 88, 184, 60), "inventory.png")
     _CREATE_FOLDER = Button((1584, 187))
     _STOP_CRAFTING = Button((1775, 800), (1750, 775, 53, 56), "cancel_craft.png")
-
+    _LEVEL_UP = Button((1150, 515), (1227, 494, 45, 45), "level_up.png")
 
     _SEARCHBAR = (1300, 190)
     _ADDED_REGION = (40, 1020, 360, 60)
@@ -158,7 +180,9 @@ class Inventory(Ark):
             if await_event(self.is_open, max_duration=config.INVENTORY_OPEN_INTERVAL):
                 break
 
-            if attempts >= (max_duration * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL):
+            if attempts >= (
+                max_duration * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL
+            ):
                 raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
         self._await_receiving_remove_inventory()
 
@@ -175,7 +199,9 @@ class Inventory(Ark):
             attempts += 1
 
             self.press(self.keybinds.target_inventory)
-            if await_event(self.is_open, False, max_duration=config.INVENTORY_CLOSE_INTERVAL):
+            if await_event(
+                self.is_open, False, max_duration=config.INVENTORY_CLOSE_INTERVAL
+            ):
                 break
 
             if attempts > (40 * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL):
@@ -521,10 +547,13 @@ class Inventory(Ark):
     def is_crafting(self) -> bool:
         return self.locate_button(self._STOP_CRAFTING, confidence=0.7)
 
+    @final
+    def has_level_up(self) -> bool:
+        return pg.pixelMatchesColor(1161,524, (0,0,0), tolerance=3)
+
     def stop_crafting(self) -> None:
         if not self.is_crafting():
             self.click_at(self._STOP_CRAFTING.location)
-
 
     def select_slot(self, idx: int = 0) -> None:
         """Moves to the first slot"""
