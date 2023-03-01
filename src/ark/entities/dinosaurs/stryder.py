@@ -1,6 +1,5 @@
 import cv2 as cv  # type: ignore[import]
 import numpy as np
-import pyautogui  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
 from .dinosaur import Dinosaur
@@ -36,7 +35,7 @@ class Stryder(Dinosaur):
         # find position of the wheel option
         pos = self.find_dedi_transfer_tab()
         if not pos:
-            raise Exception
+            raise LookupError("Failed to find dedi transfer action!")
 
         # enter the option
         self.sleep(0.5)
@@ -60,7 +59,7 @@ class Stryder(Dinosaur):
     def sort_items_to_nearby_dedis(self) -> None:
         """Uses the stryders action wheel to sort all the items in the stryders
         inventory to nearby dedis."""
-        with pyautogui.hold("e"):
-            self.sleep(1)
-            self.open_dedi_transfer_wheel()
-            self.click_sort_to_nearby_dedis()
+        self.action_wheel.activate()
+        self.sleep(2)
+        self.open_dedi_transfer_wheel()
+        self.click_sort_to_nearby_dedis()
