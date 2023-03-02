@@ -32,6 +32,9 @@ class Dinosaur(Ark):
             self.action_wheel.deactivate()
             self.inventory.open(max_duration=40)
 
+    def close(self) -> None:
+        self.inventory.close()
+
     def is_mounted(self) -> bool:
         return (
             self.window.locate_template(

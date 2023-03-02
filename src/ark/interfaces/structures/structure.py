@@ -4,7 +4,7 @@ import cv2  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ...exceptions import InventoryNotAccessibleError, NoGasolineError
+from ...exceptions import InventoryNotAccessibleError, NoGasolineError, WheelError
 from ...items import Item
 from .._button import Button
 from ..inventories import Inventory
@@ -124,8 +124,11 @@ class Structure(Ark):
         """
         try:
             self.inventory.open()
-        except InventoryNotAccessibleError:
-            self.action_wheel.activate()
+        except InventoryNotAccessibleError as e:
+            try:
+                self.action_wheel.activate()
+            except WheelError:
+                raise e
             self.action_wheel.deactivate()
             self.inventory.open(max_duration=40)
 
