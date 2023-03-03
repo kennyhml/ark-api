@@ -31,6 +31,15 @@ class DinoExport:
         if path is None:
             path = f"{config.ARK_PATH}\ShooterGame\Saved\DinoExports"
 
+        if "common" in path:
+            id_folder = max(
+                [p for p in Path(path).iterdir()],
+                key=lambda p: datetime.fromtimestamp(p.stat().st_mtime).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            )
+            path += f"\{id_folder}"
+
         file = max(
             [p for p in Path(path).iterdir()],
             key=lambda p: datetime.fromtimestamp(p.stat().st_mtime).strftime(
@@ -41,7 +50,6 @@ class DinoExport:
         try:
             with open(file, encoding="utf-8") as f:
                 contents = f.readlines()
-                
         except UnicodeDecodeError:
             with open(file, encoding="utf-16") as f:
                 contents = f.readlines()
