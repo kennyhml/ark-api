@@ -30,7 +30,7 @@ class DinoExport:
         in the configs or an alternatively passed path."""
         if path is None:
             path = f"{config.ARK_PATH}\ShooterGame\Saved\DinoExports"
-
+            
         if "common" in path:
             id_folder = max(
                 [p for p in Path(path).iterdir()],
@@ -38,7 +38,7 @@ class DinoExport:
                     "%Y-%m-%d %H:%M:%S"
                 ),
             )
-            path += f"\{id_folder}"
+            path += f"\{id_folder.stem}"
 
         file = max(
             [p for p in Path(path).iterdir()],
