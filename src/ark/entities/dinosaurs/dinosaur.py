@@ -1,5 +1,5 @@
 from ..._ark import Ark
-from ...exceptions import DinoNotMountedError, InventoryNotAccessibleError
+from ...exceptions import DinoNotMountedError, InventoryNotAccessibleError, WheelError
 from ...interfaces import ActionWheel, Inventory
 
 class Dinosaur(Ark):
@@ -27,8 +27,11 @@ class Dinosaur(Ark):
         """
         try:
             self.inventory.open()
-        except InventoryNotAccessibleError:
-            self.action_wheel.activate()
+        except InventoryNotAccessibleError as e:
+            try:
+                self.action_wheel.activate()
+            except WheelError:
+                raise e
             self.action_wheel.deactivate()
             self.inventory.open(max_duration=40)
 
