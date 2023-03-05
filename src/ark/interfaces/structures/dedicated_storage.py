@@ -70,7 +70,7 @@ class TekDedicatedStorage(Structure):
                 continue
 
             print(f"{item.name} was deposited...")
-            # 5 attempts to get a better chance for a good result
+            self.sleep(0.3)
             for _ in range(5):
                 if amount := self._get_amount_deposited(item):
                     return item, amount

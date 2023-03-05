@@ -31,6 +31,7 @@ class Dinosaur(Ark):
             try:
                 self.action_wheel.activate()
             except WheelError:
+                self.action_wheel.deactivate()
                 raise e
             self.action_wheel.deactivate()
             self.inventory.open(max_duration=40)

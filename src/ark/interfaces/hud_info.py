@@ -48,8 +48,7 @@ class HUDInfo(Ark):
             self.window.locate_template(
                 f"{self.PKG_DIR}/assets/interfaces/timer.png",
                 region=self._TIMER_WORD_REGION,
-                confidence=0.8,
-                grayscale=True,
+                confidence=0.7
             )
             is not None
         )
