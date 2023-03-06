@@ -245,7 +245,7 @@ WOOD = Item(
     name="Wood",
     search_name="wood",
     stack_size=100,
-    inventory_icon="assets/items/resources/fiber.png",
+    inventory_icon="assets/items/resources/wood.png",
 )
 
 Y_TRAP = Item(
