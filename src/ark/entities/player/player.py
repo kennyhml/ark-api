@@ -5,7 +5,7 @@ import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._helpers import timedout
+from ..._helpers import await_event, timedout
 from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
 from ...exceptions import PlayerDidntTravelError, PlayerDiedError
 from ...interfaces.hud_info import HUDInfo
@@ -181,7 +181,8 @@ class Player(Ark):
         """Picks up items from a drop script bag, deletes the bag after."""
         self.look_down_hard()
         self.press(self.keybinds.target_inventory)
-        self.sleep(0.5)
+        if await_event(self.received_item, max_duration=3):
+            self.sleep(0.5)
         self._popcorn_bag()
 
     def set_first_person(self) -> None:
@@ -276,7 +277,6 @@ class Player(Ark):
                 break
 
             self.inventory.drop(item, search=False)
-
             target.search(item)
 
         self.inventory.close()

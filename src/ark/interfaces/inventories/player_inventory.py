@@ -136,6 +136,7 @@ class PlayerInventory(Inventory):
 
         before = self.count(item)
         self.click_at(self._YOU, delay=0.2)
+        self.sleep(1)
         self.click_at(pos)
         self.press(self.keybinds.use)
 

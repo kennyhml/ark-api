@@ -65,6 +65,7 @@ class Inventory(Ark):
         "speed": (1151, 773),
         "crafting": (1149, 818),
     }
+    CRAFTING_QUEUE = (1234, 779, 571, 168)
 
     _FOLDERS = [
         "AAA",
@@ -399,7 +400,7 @@ class Inventory(Ark):
         return self.window.locate_template(
             item.inventory_icon,
             region=self._UPPER_ITEM_REGION if is_searched else self._ITEM_REGION,
-            confidence=0.85,
+            confidence=0.8,
             center=True,
             grayscale=True,
         )
@@ -672,7 +673,7 @@ class Inventory(Ark):
             )
             is not None
         )
-
+    
     def delete_search(self) -> None:
         """Deletes the last term in the searchbar by selecting all of it,
         deleting it with backspace and then escaping out."""
