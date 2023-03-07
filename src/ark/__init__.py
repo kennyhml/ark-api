@@ -6,4 +6,4 @@ from .state import State
 from .window import ArkWindow
 
 __all__ = ("State", "ArkWindow", "Server", "InputSettings", "UserSettings", "DinoExport")
-__version__ = "1.2.1"
+__version__ = "1.2.2"
