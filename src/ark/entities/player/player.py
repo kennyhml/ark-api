@@ -299,9 +299,9 @@ class Player(Ark):
             pg.keyDown(self.keybinds.hud_info)
             self.sleep(0.1)
 
-            if timedout(start, 60):
+            if timedout(start, 15):
                 pg.keyUp(self.keybinds.hud_info)
-                raise PlayerDidntTravelError("Failed to spawn in!")
+                return
 
             if self.has_died():
                 raise PlayerDiedError("Spawning")

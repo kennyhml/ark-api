@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ark-api"
-version = "1.2.2"
+version = "1.2.3"
 authors = [
   { name="Kenny Hommel", email="kennyhommel36@gmail.com" },
 ]
