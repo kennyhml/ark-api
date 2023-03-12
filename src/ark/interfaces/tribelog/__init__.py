@@ -1,1 +1,1 @@
-from .tribelog import TribeLog
+from .tribelog import TribeLog, TribeLogMessage

@@ -1,23 +1,16 @@
-from threading import Thread
+from typing import Generator
 
 import cv2 as cv  # type: ignore[import]
-import discord  # type: ignore[import]
 import numpy as np
 from mss.screenshot import ScreenShot  # type: ignore[import]
 from PIL import Image  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ..._ark import Ark
-from ..._helpers import img_to_file
 from ...exceptions import LogsNotOpenedError
 from .._button import Button
-from ._config import (
-    CONTENTS_MAPPING,
-    DAYTIME_MAPPING,
-    DENOISE_MAPPING,
-    EVENT_MAPPING,
-    INGORED_TERMS,
-)
+from ._config import (CONTENTS_MAPPING, DAYTIME_MAPPING, DENOISE_MAPPING,
+                      EVENT_MAPPING, INGORED_TERMS)
 from ._message import TribeLogMessage
 
 
@@ -25,23 +18,12 @@ class TribeLog(Ark):
     """Represents the ark tribe log. Stores all previous logs as a
     list of `TribeLogMessages`.
 
-    Parameters:
-    -----------
-    alert webhook :class:`discord.Webhook`:
-        A discord webhook object to send the alerts to
-
-    log webhook :class:`discord.Webhook`:
-        A discord webhook object to send raw tribelog screenshots to
-
     Attributes:
     --------------------
     tribe_log :class:`list`:
         A list containing the past 30 tribe log events as `TribeLogMessages`
     """
 
-    sensor_icon = "https://static.wikia.nocookie.net/arksurvivalevolved_gamepedia/images/1/16/Tek_Sensor_%28Genesis_Part_1%29.png/revision/latest?cb=20200226080818"
-    destroyed_icon = "https://static.wikia.nocookie.net/arksurvivalevolved_gamepedia/images/4/46/C4_Charge.png/revision/latest/scale-to-width-down/228?cb=20150615094656"
-    dino_killed_icon = "https://static.wikia.nocookie.net/arksurvivalevolved_gamepedia/images/6/61/Tek_Bow_%28Genesis_Part_2%29.png/revision/latest?cb=20210603191501"
     LOG_REGION = 1340, 180, 460, 820
 
     _ONLINE_AXIS = (1132, 315, 111, 720)
@@ -49,33 +31,27 @@ class TribeLog(Ark):
     _TOGGLE_ONLINE = Button(
         (1063, 125), (1035, 97, 52, 52), "toggle_online_members.png"
     )
-    LAST_LOG: discord.WebhookMessage = None
 
-    def __init__(self, alert_webhook: str, log_webhook: str, user_id: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._tribe_log: list[TribeLogMessage] = []
-        self.alert_webhook = discord.Webhook.from_url(
-            alert_webhook, adapter=discord.RequestsWebhookAdapter()
-        )
-        self.log_webhook = discord.Webhook.from_url(
-            log_webhook, adapter=discord.RequestsWebhookAdapter()
-        )
-        self.user_id = user_id
         self._online_members: int | None = None
+
+    def __repr__(self) -> str:
+        """A representative string of the log message"""
+        return "".join(f"{log_message}\n" for log_message in self._tribe_log)
+    
+    def __iter__(self) -> Generator[TribeLogMessage, None, None]:
+        for message in self._tribe_log:
+            yield message
 
     @property
     def online_members(self) -> str:
         if self._online_members is None:
             return "?"
-
         if self._online_members >= 12:
             return "12+"
-
         return str(self._online_members)
-
-    def __repr__(self) -> str:
-        """A representative string of the log message"""
-        return "".join(f"{log_message}\n" for log_message in self._tribe_log)
 
     def toggle_online_members(self) -> None:
         assert self._TOGGLE_ONLINE.template and self._TOGGLE_ONLINE.region
@@ -85,6 +61,55 @@ class TribeLog(Ark):
         ):
             return
         self.click_at(self._TOGGLE_ONLINE.location)
+
+    def find_tribelog_events(self, img: ScreenShot) -> list[TribeLogMessage]:
+        """Runs a scan on the tribelog snapshot to find all 'Day' occurrences, then
+        extracts the message and checks for contents. Adds new messages to the tribelog
+        and posts them as alert if they are relevant.
+        """
+        # sort days from top to bottom by y-coordinate so we can get the message frame
+        image_array = np.array(img)
+        image_rgb = cv.cvtColor(image_array, cv.COLOR_BGR2RGB)
+        image = Image.fromarray(image_rgb)
+
+        day_points = self.get_day_occurrences(image)
+        days_in_order = sorted([day for day in day_points], key=lambda t: t[1])
+
+        messages: list[TribeLogMessage] = []
+        for i, box in enumerate(days_in_order, start=1):
+            try:
+                # get relevant regions
+                day_region = self.grab_day_region(box)
+                message_region = self.grab_message_region(box, days_in_order[i])
+            except IndexError:
+                break
+            try:
+                day = self.get_daytime(image.crop(day_region))
+                if not day:
+                    continue
+                
+                content = self.get_message_contents(image.crop(message_region))
+                if not content:
+                    continue
+                
+                if self.day_is_known(day) or self.content_is_irrelevant(content[1]):
+                    continue
+
+            except Exception:
+                continue
+
+            # new message with relevant contents, create message object and add it
+            # to the new messages
+            message = TribeLogMessage(day, *content)
+            messages.append(message)
+
+        post = len(self._tribe_log) != 0
+        self._tribe_log += reversed(messages)
+        self.delete_old_logs()
+        return list(reversed(messages)) if post else []
+
+    def grab_current_events(self) -> ScreenShot:
+        return self.window.grab_screen(self.LOG_REGION)
 
     def get_online_members(self) -> None:
         self.toggle_online_members()
@@ -97,25 +122,6 @@ class TribeLog(Ark):
             )
         )
         self._online_members = online
-
-    def check_tribelogs(self) -> None:
-        """Main tribelog check call.
-        Opens and closes the tribelog to grab a screenshot of it, then starts
-        a thread processing the Image.
-
-        CAREFUL: Do not confuse with `update_tribelogs` which will not take
-        a new snapshot and does not run threaded.
-
-        Read `update_tribelogs` docstring for more information about the tribelogging.
-        """
-        self.open()
-        img = self.window.grab_screen(self.LOG_REGION)
-        self.get_online_members()
-        self.close()
-
-        Thread(
-            target=self.update_tribelogs, name="Updating tribelogs...", args=(img,)
-        ).start()
 
     def is_open(self) -> bool:
         """Checks if the tribelog is open."""
@@ -218,118 +224,6 @@ class TribeLog(Ark):
         """
         return any(term in content for term in INGORED_TERMS)
 
-    def update_tribelogs(self, img: ScreenShot) -> None:
-        """Runs a scan on the tribelog snapshot to find all 'Day' occurrences, then
-        extracts the message and checks for contents. Adds new messages to the tribelog
-        and posts them as alert if they are relevant.
-
-        Alerts will @ you if:
-        - A pincoded structure was destroyed
-        - A tek sensor was triggerd by an enemy SURVIVOR
-        - A dinosaur or structure containing the string "ALERT" was destroyed / killed
-        - 3 or more new alerts within 1 log update occurred
-
-        TODO:
-        Split it up into different tasks, its responsible for too much.
-        """
-        # sort days from top to bottom by y-coordinate so we can get the message frame
-        image_array = np.array(img)
-        image_rgb = cv.cvtColor(image_array, cv.COLOR_BGR2RGB)
-        image = Image.fromarray(image_rgb)
-
-        day_points = self.get_day_occurrences(image)
-        days_in_order = sorted([day for day in day_points], key=lambda t: t[1])
-
-        messages = []
-        for i, box in enumerate(days_in_order, start=1):
-            try:
-                # get relevant regions
-                day_region = self.grab_day_region(box)
-                message_region = self.grab_message_region(box, days_in_order[i])
-
-            except IndexError:
-                break
-            try:
-                # OCR the day and validate it, continue if the day is invalid
-                day = self.get_daytime(image.crop(day_region))
-                if not day:
-                    continue
-
-                # OCR the contents, None if its irrelevant
-                content = self.get_message_contents(image.crop(message_region))
-                if not content:
-                    continue
-
-                # check if the message is already known or if the contents are irrelevant
-                if self.day_is_known(day) or self.content_is_irrelevant(content[1]):
-                    continue
-            except:
-                continue
-
-            # new message with relevant contents, create message Object and add it
-            # to the new messages
-            message = TribeLogMessage(day, *content)
-            messages.append(message)
-
-            # if its not the first time we update our internal logs, send out alerts for the message
-            # if 3 alerts are sent within the same log update, @everyone for the message
-            if self._tribe_log:
-                self.send_alert(message, multiple=len(messages) == 3)
-
-        self._tribe_log += reversed(messages)
-        self.delete_old_logs()
-
-        file = img_to_file(image)
-        if self.LAST_LOG is not None:
-            self.LAST_LOG.delete()
-
-        self.LAST_LOG = self.log_webhook.send(
-            content="Current tribelogs:",
-            file=file,
-            username="Ling Ling Logs",
-            avatar_url="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
-            wait=True,
-        )
-
-    def send_alert(self, message: TribeLogMessage, multiple: bool = False) -> None:
-        """Sends an alert to discord with the given message."""
-        # create our webhook, action and description in the header
-        embed = discord.Embed(
-            type="rich",
-            title=message.action,
-            description=message.day,
-            color=0xFF0000,
-        )
-
-        embed.add_field(name=f"{message.content}", value="\u200b")
-        # get a suitable thumbnail
-        match message.action:
-            case "Something destroyed!":
-                thumbnail_url = self.destroyed_icon
-            case "Tek Sensor triggered!":
-                thumbnail_url = self.sensor_icon
-            case "Something killed!":
-                thumbnail_url = self.dino_killed_icon
-
-        embed.set_thumbnail(url=thumbnail_url)
-        embed.set_footer(text="Ling Ling on top!")
-
-        # mention if a relevant event happened
-        mention = (
-            any(
-                msg in message.content
-                for msg in ("enemy survivor", "Pin Coded", "ALERT")
-            )
-            or multiple
-        )
-        # send the message
-        self.alert_webhook.send(
-            content="@everyone" if mention else "",
-            avatar_url="https://i.kym-cdn.com/entries/icons/original/000/017/373/kimjongz.PNG",
-            embed=embed,
-            username="Ling Ling Look Logs",
-        )
-
     def get_day_occurrences(self, img: Image.Image) -> list[tuple]:
         """Retuns a list of all days, each day being a
         tuple containing top, left, widht and height"""
@@ -420,9 +314,6 @@ class TribeLog(Ark):
         for c in CONTENTS_MAPPING:
             raw_res = raw_res.replace(c, CONTENTS_MAPPING[c])
         filtered_res = raw_res.rstrip()
-        if len(filtered_res) > 250:
-            print("Message is too long for an embed. Shortening it...")
-        filtered_res = filtered_res[:250]
 
         if EVENT_MAPPING[denoise_rgb] == "Tek Sensor triggered!":
             sensor_event = self.get_sensor_event(image)
@@ -562,5 +453,4 @@ class TribeLog(Ark):
         if len(self._tribe_log) < 30:
             return
 
-        old_length = len(self._tribe_log)
         self._tribe_log = self._tribe_log[-30:]

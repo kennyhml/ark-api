@@ -11,3 +11,7 @@ class TribeLogMessage:
 
     def __repr__(self):
         return f"{self.day} {self.action} {self.content}"
+    
+
+    def __post_init__(self) -> None:
+        self.day = f"Day {self.day[4:]}" 

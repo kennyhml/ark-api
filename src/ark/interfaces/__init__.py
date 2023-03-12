@@ -6,5 +6,5 @@ from .main_menu import MainMenu
 from .session_list import SessionList
 from .spawn_screen import SpawnScreen
 from .structures import *
-from .tribelog import TribeLog
+from .tribelog import TribeLog, TribeLogMessage
 from .wheels import ActionWheel
