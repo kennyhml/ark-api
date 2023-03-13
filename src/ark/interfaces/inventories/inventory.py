@@ -130,6 +130,10 @@ class Inventory(Ark):
     def craftables(self) -> list[Item] | None:
         return self._craftables
 
+    @property
+    def name(self) -> str:
+        return self._name
+
     @final
     def add_contents(self, item: Item, stacks: int) -> None:
         try:
@@ -579,7 +583,7 @@ class Inventory(Ark):
                 ):
                     return index
             self.sleep(0.5)
-        raise UnknownFolderIndexError
+        raise UnknownFolderIndexError(self)
 
     def create_folder(self, name: str) -> None:
         """Creates a folder in the inventory at the classes folder button"""

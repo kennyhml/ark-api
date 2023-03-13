@@ -59,6 +59,12 @@ class BedNotFoundError(InterfaceError):
 class InventoryError(InterfaceError):
     """Base class for all inventory exceptions"""
 
+    def __init__(self, inventory) -> None:
+        self.inventory = inventory
+
+    def __str__(self) -> str:
+        return f"Ran into an inventory error at {self.inventory.name}"
+
 
 class InventoryNotOpenError(InventoryError):
     """Raised when attempting an interaction within the
@@ -75,19 +81,28 @@ class UnknownFolderIndexError(InventoryError):
     """Raised when a folder index is invalid or not determined"""
 
     def __str__(self) -> str:
-        return f"Failed to find expected folder"
+        return f"Failed to find expected folder in {self.inventory.name}!"
 
 
 class InventoryNotAccessibleError(InventoryError):
     """Raised when the inventory cannot be accessed."""
 
+    def __str__(self) -> str:
+        return f"Failed to access {self.inventory.name}!"
+
 
 class InventoryNotClosableError(InventoryError):
     """Raised when the inventory cannot be closed"""
 
+    def __str__(self) -> str:
+        return f"Failed to close {self.inventory.name}!"
+
 
 class ReceivingRemoveInventoryTimeout(InventoryError):
     """Raised when the 'Receiving Remote Inventory' text does not disappear."""
+
+    def __str__(self) -> str:
+        return f"Timed out receiving remote inventory at {self.inventory.name}!"
 
 
 class NoItemsAddedError(InventoryError):
@@ -103,25 +118,26 @@ class NoItemsAddedError(InventoryError):
 class NoItemsDepositedError(InventoryError):
     """Raised when the 'X items deposited.' message does not appear."""
 
+    def __str__(self) -> str:
+        return f"Failed to deposit items into {self.inventory.name}"
+
 
 class NoGasolineError(InventoryError):
     """Raised when a structure can not be turned on"""
 
-    def __init__(self, structure_name) -> None:
-        self.structure = structure_name
-
     def __str__(self) -> str:
-        return f"{self.structure} is out of gasoline!"
+        return f"{self.inventory.name} is out of gasoline!"
 
 
 class MissingItemErrror(InventoryError):
     """Raised when an item is missing"""
 
-    def __init__(self, item: str) -> None:
+    def __init__(self, inventory, item: str) -> None:
         self.item = item
+        self.inventory = inventory
 
     def __str__(self) -> str:
-        return f"{self.item} could not be found in the inventory!"
+        return f"{self.item} could not be found in {self.inventory.name}!"
 
 
 class PlayerError(Exception):

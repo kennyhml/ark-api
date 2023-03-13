@@ -132,7 +132,7 @@ class PlayerInventory(Inventory):
 
         pos = self.find(item)
         if pos is None:
-            raise MissingItemErrror(item.name)
+            raise MissingItemErrror(self, item.name)
 
         before = self.count(item)
         self.click_at(self._YOU, delay=0.2)
@@ -170,7 +170,7 @@ class PlayerInventory(Inventory):
             ):
                 raise TimeoutError
             return
-        raise MissingItemErrror(item.name)
+        raise MissingItemErrror(self, item.name)
 
     def transfer_spam(self, item: Item, times: int) -> None:
         self.search(item)
