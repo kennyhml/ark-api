@@ -360,7 +360,8 @@ class Inventory(Ark):
             self.click_at(self._INVENTORY_TAB.location, delay=0.3)
         else:
             raise ValueError(f"Expected one of ['inventory', 'crafting'], got {tab}")
-
+        self.sleep(1)
+        
     @final
     def drop(self, item: Item, search: bool = True) -> None:
         """Searches for the given item and popcorns it until there is none left.
