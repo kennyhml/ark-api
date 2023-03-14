@@ -64,7 +64,7 @@ class PlayerInventory(Inventory):
 
             attempts += 1
             if attempts >= 6:
-                raise InventoryNotAccessibleError(self._name)
+                raise InventoryNotAccessibleError(self)
 
     def await_items_added(self, item: Item | str) -> None:
         """Waits for items to be added to the inventory"""

@@ -279,7 +279,7 @@ class Structure(Ark):
             return
 
         if not self.is_turned_off():
-            raise NoGasolineError(self._name)
+            raise NoGasolineError(self.inventory)
 
         while self.is_turned_off():
             self.click_at(964, 615, delay=0.3)

@@ -7,12 +7,15 @@ from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from ... import config
 from ..._ark import Ark
-from ..._helpers import (await_event, get_center, get_filepath, set_clipboard,
-                         timedout)
-from ...exceptions import (InventoryNotAccessibleError,
-                           InventoryNotClosableError, InventoryNotOpenError,
-                           NoItemsAddedError, ReceivingRemoveInventoryTimeout,
-                           UnknownFolderIndexError)
+from ..._helpers import await_event, get_center, get_filepath, set_clipboard, timedout
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    InventoryNotClosableError,
+    InventoryNotOpenError,
+    NoItemsAddedError,
+    ReceivingRemoveInventoryTimeout,
+    UnknownFolderIndexError,
+)
 from ...items import Item
 from .._button import Button
 
@@ -188,7 +191,7 @@ class Inventory(Ark):
             if attempts >= (
                 max_duration * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL
             ):
-                raise InventoryNotAccessibleError(f"Failed to access {self._name}!")
+                raise InventoryNotAccessibleError(self)
         self._await_receiving_remove_inventory()
 
     def close(self) -> None:
@@ -210,7 +213,7 @@ class Inventory(Ark):
                 break
 
             if attempts > (40 * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL):
-                raise InventoryNotClosableError(f"Failed to close {self._name}!")
+                raise InventoryNotClosableError(self)
         self.sleep(0.3)
 
     @overload
@@ -554,12 +557,12 @@ class Inventory(Ark):
 
     @final
     def has_level_up(self) -> bool:
-        return pg.pixelMatchesColor(1161,524, (0,0,0), tolerance=3)
+        return pg.pixelMatchesColor(1161, 524, (0, 0, 0), tolerance=3)
 
     def level_skill(self, skill: str, times: int) -> None:
         pos = self.LEVEL_UP_BUTTONS[skill]
         self.move_to(pos)
-        
+
         for _ in range(times):
             pg.click()
 
@@ -677,7 +680,7 @@ class Inventory(Ark):
             )
             is not None
         )
-    
+
     def delete_search(self) -> None:
         """Deletes the last term in the searchbar by selecting all of it,
         deleting it with backspace and then escaping out."""
@@ -796,9 +799,7 @@ class Inventory(Ark):
             self.sleep(0.1)
             c += 1
             if c > 300:
-                raise ReceivingRemoveInventoryTimeout(
-                    "Timed out waiting to receive remote inventory!"
-                )
+                raise ReceivingRemoveInventoryTimeout(self)
 
     def _click_searchbar(self, delete_prior: bool = True) -> None:
         """Clicks into the searchbar"""

@@ -124,6 +124,4 @@ class TekDedicatedStorage(Structure):
 
             attempts += 1
             if attempts >= (10 * TIMER_FACTOR):
-                raise NoItemsDepositedError(
-                    f"Failed to deposit after {(10 * TIMER_FACTOR) * 3} seconds!"
-                )
+                raise NoItemsDepositedError(self.inventory)
