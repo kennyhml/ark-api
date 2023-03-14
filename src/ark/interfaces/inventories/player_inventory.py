@@ -126,7 +126,7 @@ class PlayerInventory(Inventory):
 
         self._transfer_by_stacks(item, stacks, target)
 
-    def equip(self, item: Item) -> None:
+    def equip(self, item: Item, is_armor: bool = True) -> None:
         self.search(item)
         self.sleep(0.3)
 
@@ -134,6 +134,11 @@ class PlayerInventory(Inventory):
         if pos is None:
             raise MissingItemErrror(self, item.name)
 
+        if not is_armor:
+            self.click_at(pos)
+            self.press(self.keybinds.use)
+            return
+        
         before = self.count(item)
         self.click_at(self._YOU, delay=0.2)
         self.sleep(1)

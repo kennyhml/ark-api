@@ -119,6 +119,9 @@ class Player(Ark):
         )
         self.sleep(delay)
 
+    def attack(self) -> None:
+        self.click("left")
+
     def pick_up(self) -> None:
         """Picks up an item by pressing E"""
         self.press(self.keybinds.use)
