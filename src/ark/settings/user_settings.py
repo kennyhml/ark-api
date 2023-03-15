@@ -43,9 +43,13 @@ class UserSettings:
         if path is None:
             path = f"{config.ARK_PATH}\ShooterGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
 
-        with open(path) as f:
-            contents = f.readlines()
-
+        try:
+            with open(path, encoding="utf-8") as f:
+                contents = f.readlines()
+        except UnicodeDecodeError:
+            with open(path, encoding="utf-16") as f:
+                contents = f.readlines()
+                
         settings: dict[str, float | bool | str | Path] = {}
         settings["path"] = Path(path)
 
