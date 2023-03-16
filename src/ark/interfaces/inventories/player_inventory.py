@@ -42,7 +42,7 @@ class PlayerInventory(Inventory):
 
     _SEARCHBAR = (180, 180)
     _ADDED_REGION = (10, 1000, 220, 80)
-    _ITEM_REGION = (117, 232, 582, 883)
+    _ITEM_REGION = (117, 232, 564, 708)
     _UPPER_ITEM_REGION = (117, 230, 568, 191)
     _CAPPED_ICON = (85, 235, 52, 50)
     _YOU = (794, 116)

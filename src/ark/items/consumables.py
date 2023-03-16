@@ -77,3 +77,17 @@ YTRAP_SEED = Item(
     stack_size=100,
     inventory_icon="assets/items/consumables/ytrap_seed.png",
 )
+
+NARCOTIC = Item(
+    name="Narcotic",
+    search_name="narcotic",
+    stack_size=100,
+    inventory_icon="assets/items/consumables/narcotic.png",
+)
+
+MEDBREW = Item(
+    name="Medical Brew",
+    search_name="medical brew",
+    stack_size=100,
+    inventory_icon="assets/items/consumables/medbrew.png",
+)
