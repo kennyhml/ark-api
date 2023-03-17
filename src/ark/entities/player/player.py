@@ -33,6 +33,7 @@ class Player(Ark):
     hotbar :class:`list[str]`:
         The players hotbar slots
     """
+
     _DEBUFF_REGION = (1270, 950, 610, 130)
     _ADDED_REGION = (0, 450, 314, 240)
     _HP_BAR = (1882, 1022, 15, 50)
@@ -176,6 +177,7 @@ class Player(Ark):
         for _ in range(3):
             input.press("shift")
         input.keyUp("shift")
+
     def disable_hud(self) -> None:
         """Disables HUD"""
         self.press("backspace")
@@ -263,8 +265,9 @@ class Player(Ark):
         self.sleep(0.5)
 
         target.open(max_duration=45)
-
+        target.search(item)
         target.take(item, amount=1)
+
         self.inventory.await_items_added(item)
         self.sleep(0.3)
 
