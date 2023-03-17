@@ -306,7 +306,9 @@ class Inventory(Ark):
 
     @final
     def transfer_all(
-        self, items: Optional[Iterable[Item | str] | Item | str] = None
+        self,
+        items: Optional[Iterable[Item | str] | Item | str] = None,
+        delete_search: bool = True,
     ) -> None:
         """Searches for an iterable of Items or words and transfers all. If no
         items are passed, it simply transfers all without searching for anything.
@@ -338,7 +340,7 @@ class Inventory(Ark):
             items = set(items)
 
         for item in items:
-            self.search(item)
+            self.search(item, delete_prior=delete_search or len(items) > 1)
             press_button()
 
     @final
@@ -361,7 +363,7 @@ class Inventory(Ark):
         else:
             raise ValueError(f"Expected one of ['inventory', 'crafting'], got {tab}")
         self.sleep(1)
-        
+
     @final
     def drop(self, item: Item, search: bool = True) -> None:
         """Searches for the given item and popcorns it until there is none left.
@@ -457,7 +459,8 @@ class Inventory(Ark):
 
         """
         # search for the item and hit take all
-        self.search(item)
+        if not self.find(item):
+            self.search(item)
         self.sleep(0.2)
 
         # take a specific quantity of a stack
