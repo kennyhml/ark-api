@@ -273,7 +273,9 @@ class Inventory(Ark):
             pg.typewrite(item.lower(), interval=0.001)
         else:
             pg.typewrite(item.search_name.lower(), interval=0.001)
+
         # escape out of the searchbar so presing f closes the inventory
+        self.sleep(0.2)
         self.press("esc")
 
     @final
@@ -812,7 +814,9 @@ class Inventory(Ark):
             return
 
         with pg.hold("ctrl"):
+            self.sleep(0.1)
             pg.press("a")
+            self.sleep(0.1)
 
     def _receiving_remote_inventory(self) -> bool:
         """Checks if the 'Receiving Remote Inventory' text is visible."""
