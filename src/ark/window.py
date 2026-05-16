@@ -9,9 +9,14 @@ from mss import mss, screenshot, tools  # type: ignore[import]
 from PIL import Image, ImageOps
 from pytesseract import pytesseract as tes  # type: ignore[import]
 from screeninfo import get_monitors  # type: ignore[import]
+import pyscreeze
 
 from ._helpers import get_center
 from . import config
+
+pg.useImageNotFoundException(False)
+pyscreeze.USE_IMAGE_NOT_FOUND_EXCEPTION = False 
+
 
 class ArkWindow:
     """ARK window handle
@@ -42,7 +47,6 @@ class ArkWindow:
         self._boundaries = self.get_boundaries()
         self._monitor = self.get_monitor()
         self._fullscreen = self.check_fullscreen()
-        tes.tesseract_cmd = config.TESSERACT_PATH
 
     def __str__(self) -> str:
         return (

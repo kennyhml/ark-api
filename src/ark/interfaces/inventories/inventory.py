@@ -2,6 +2,9 @@ import math
 import time
 from typing import Iterable, Literal, Optional, final, overload
 
+import pathlib
+import cv2 as cv  # type: ignore
+import numpy as np
 import pyautogui as pg  # type: ignore[import]
 from pytesseract import pytesseract as tes  # type: ignore[import]
 
@@ -15,6 +18,7 @@ from ...exceptions import (
     NoItemsAddedError,
     ReceivingRemoveInventoryTimeout,
     UnknownFolderIndexError,
+    EggStatError,
 )
 from ...items import Item
 from .._button import Button
@@ -217,12 +221,10 @@ class Inventory(Ark):
         self.sleep(0.3)
 
     @overload
-    def scroll(self, way: Literal["up", "down"], *, rows: int = 1) -> None:
-        ...
+    def scroll(self, way: Literal["up", "down"], *, rows: int = 1) -> None: ...
 
     @overload
-    def scroll(self, way: Literal["up", "down"], *, pages: int = 0) -> None:
-        ...
+    def scroll(self, way: Literal["up", "down"], *, pages: int = 0) -> None: ...
 
     @final
     def scroll(
@@ -434,12 +436,10 @@ class Inventory(Ark):
         return self.find(item, is_searched) is not None
 
     @overload
-    def take(self, item: Item, *, amount: int) -> None:
-        ...
+    def take(self, item: Item, *, amount: int) -> None: ...
 
     @overload
-    def take(self, item: Item, *, stacks: int) -> None:
-        ...
+    def take(self, item: Item, *, stacks: int) -> None: ...
 
     @final
     def take(self, item: Item, *, stacks: int = 0, amount: int = 1) -> None:
@@ -495,8 +495,7 @@ class Inventory(Ark):
     def manage_view_option(
         self,
         option: Literal["folder view", "show engrams", "unlearned engrams"],
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     @overload
     def manage_view_option(
@@ -504,8 +503,7 @@ class Inventory(Ark):
         option: Literal["folder view", "show engrams", "unlearned engrams"],
         *,
         set_to: bool,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def manage_view_option(
         self,
@@ -593,6 +591,126 @@ class Inventory(Ark):
                     return index
             self.sleep(0.5)
         raise UnknownFolderIndexError(self)
+
+    def read_folder_name(self, slot: int, config: str) -> str:
+        name_roi = (self.SLOTS[slot][0], self.SLOTS[slot][1] + 68, 81, 25)
+
+        img = self.window.grab_screen(name_roi)
+
+        masked = self.window.denoise_text(
+            img, (254, 204, 56), variance=30, dilate=False, upscale=True
+        )
+
+        result: str = tes.image_to_string(masked, config=config).rstrip()
+
+        return result
+
+    def is_folder(self, slot: int) -> bool:
+        roi = (self.SLOTS[slot][0], self.SLOTS[slot][1], 54, 30)
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/folder.png",
+                region=roi,
+                confidence=0.7,
+            )
+            is not None
+        )
+
+    def is_empty(self, slot: int) -> bool:
+        roi = (self.SLOTS[slot][0] + 69, self.SLOTS[slot][1] + 76, 27, 15)
+        img = self.window.grab_screen(roi)
+        masked = self.window.denoise_text(
+            img,
+            (214, 177, 45),
+            dilate=False,
+            variance=30,
+        )
+
+        count = cv.countNonZero(masked)
+        print(count)
+        return count > 5
+
+    def get_egg_stats(self, slot: int, **kwargs) -> dict:
+        area = self.SLOTS[slot]
+        self.move_to(area[0] + area[2] / 2, area[1] + area[3] / 2)
+
+        # displays in a different loc depending on the slot
+        flipped = slot % 6 in (4, 5)
+        if slot <= 5:
+            if flipped:
+                roi = (area[0] - 304, area[1], 300, 367)
+            else:
+                roi = (area[0] + 98, area[1], 300, 367)
+        else:
+            if flipped:
+                roi = (area[0] - 304, area[1] - 282, 300, 367)
+            else:
+                roi = (area[0] + 98, area[1] - 282, 300, 367)
+
+        img = self.window.grab_screen(roi)
+
+        mat = np.asarray(img)
+        mat = cv.cvtColor(mat, cv.COLOR_RGB2BGR)
+        mat = cv.cvtColor(mat, cv.COLOR_BGR2RGB)
+
+        gx, gy, gw, gh = (99, 118, 24, 30)
+        ix, iy, iw, ih = (144, 40, 144, 25)
+
+        gender_crop = mat[gy : gy + gh, gx : gx + gw]
+        incubation_crop = mat[iy : iy + ih, ix : ix + iw]
+
+        female_stat_color = (191, 127, 255)
+        male_stat_color = (253, 190, 0)
+        muta_color = (64, 252, 63)
+        ret = {}
+
+        for k, v in kwargs.items():
+            if k == "maturation":
+                # todo: check maturation percentage
+                ...
+            elif k == "gender":
+                if (
+                    self.window.locate_in_image(
+                        f"{self.PKG_DIR}/assets/stats/female.png",
+                        gender_crop,
+                        confidence=0.7,
+                    )
+                    is not None
+                ):
+                    ret["gender"] = "female"
+                elif (
+                    self.window.locate_in_image(
+                        f"{self.PKG_DIR}/assets/stats/male.png",
+                        gender_crop,
+                        confidence=0.7,
+                    )
+                    is not None
+                ):
+                    ret["gender"] = "male"
+                else:
+                    raise EggStatError("Could not determine a gender")
+            else:
+                stat_img = f"{self.PKG_DIR}/assets/stats/{k}.png"
+                if not pathlib.Path(stat_img).exists():
+                    raise ValueError(f"Invalid kwarg: {k}")
+
+                loc = self.window.locate_in_image(
+                    stat_img,
+                    mat,
+                    confidence=0.7,
+                )
+                if loc is None:
+                    raise EggStatError(f"Could not find stat {k}")
+
+                roi = (loc[0] + loc[2] + 2, loc[1], 76, 28)
+                x, y, w, h = roi
+                crop = mat[y : y + h, x : x + w]
+
+                cv.imshow(k, crop)
+
+        cv.imshow("image", mat)
+        cv.waitKey(500)
+        return {}
 
     def create_folder(self, name: str) -> None:
         """Creates a folder in the inventory at the classes folder button"""

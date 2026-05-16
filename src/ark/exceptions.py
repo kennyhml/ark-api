@@ -98,6 +98,14 @@ class InventoryNotClosableError(InventoryError):
         return f"Failed to close {self.inventory.name}!"
 
 
+class EggStatError(InventoryError):
+    def __init__(self, error: str) -> None:
+        self.error = error
+
+    def __str__(self) -> str:
+        return f"Egg Stat Error: {self.error}"
+
+
 class ReceivingRemoveInventoryTimeout(InventoryError):
     """Raised when the 'Receiving Remote Inventory' text does not disappear."""
 

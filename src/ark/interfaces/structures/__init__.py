@@ -6,3 +6,4 @@ from .industrial_grinder import IndustrialGrinder
 from .structure import Structure
 from .tek_crop_plot import TekCropPlot
 from .sleeping_pod import TekSleepingPod
+from .cryobreeder import CryoBreeder, CryobreederState
