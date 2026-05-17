@@ -114,6 +114,14 @@ class ContextActionError(InventoryError):
         return f"Context action '{self.action}' failed"
 
 
+class FolderError(InventoryError):
+    def __init__(self, action: str) -> None:
+        self.action = action
+
+    def __str__(self) -> str:
+        return f"Could not'{self.action}' the folder"
+
+
 class ReceivingRemoveInventoryTimeout(InventoryError):
     """Raised when the 'Receiving Remote Inventory' text does not disappear."""
 

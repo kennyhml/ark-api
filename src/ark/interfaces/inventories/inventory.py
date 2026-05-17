@@ -20,11 +20,10 @@ from ...exceptions import (
     UnknownFolderIndexError,
     EggStatError,
     ContextActionError,
+    FolderError,
 )
 from ...items import Item
 from .._button import Button
-
-# reader = easyocr.Reader(["en"], gpu=False)
 
 
 class Inventory(Ark):
@@ -599,13 +598,19 @@ class Inventory(Ark):
         name_roi = (self.SLOTS[slot][0], self.SLOTS[slot][1] + 68, 81, 25)
 
         img = self.window.grab_screen(name_roi)
+        img = np.asarray(img)
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
 
-        masked = self.window.denoise_text(
-            img, (254, 204, 56), variance=30, dilate=False, upscale=True
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+        mask1 = cv.inRange(hsv, (97, 190, 160), (180, 255, 255))
+        resized = cv.resize(mask1, None, fx=4, fy=4, interpolation=cv.INTER_LINEAR)
+        inverted = cv.bitwise_not(resized)
+        padded = cv.copyMakeBorder(
+            inverted, 20, 20, 20, 20, cv.BORDER_CONSTANT, value=255
         )
-
-        result: str = tes.image_to_string(masked, config=config).rstrip()
-
+        result: str = tes.image_to_string(padded, config=config).rstrip()
         return result
 
     def is_folder(self, slot: int) -> bool:
@@ -618,6 +623,50 @@ class Inventory(Ark):
             )
             is not None
         )
+
+    def is_in_folder(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/in_folder.png",
+                region=self.SLOTS[0],
+                confidence=0.7,
+            )
+            is not None
+        )
+
+    def open_folder(self, slot: int):
+        loc = self.SLOTS[slot]
+        self.move_to(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
+        self.sleep(0.1)
+
+        start = time.time()
+        last_click = None
+        while not self.is_in_folder():
+            if timedout(start, 15):
+                raise FolderError("open")
+
+            if last_click is None or timedout(last_click, 3):
+                for _ in range(2):
+                    self.click("left")
+                    self.sleep(0.1)
+                last_click = time.time()
+
+    def close_current_folder(self):
+        loc = self.SLOTS[0]
+        self.move_to(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
+        self.sleep(0.1)
+
+        start = time.time()
+        last_click = None
+        while self.is_in_folder():
+            if timedout(start, 15):
+                raise FolderError("close")
+
+            if last_click is None or timedout(last_click, 3):
+                for _ in range(2):
+                    self.click("left")
+                    self.sleep(0.1)
+                last_click = time.time()
 
     def is_baby_cryo(self, slot: int) -> bool:
         roi = (self.SLOTS[slot][0], self.SLOTS[slot][1], 46, 46)
@@ -683,9 +732,6 @@ class Inventory(Ark):
         custom_config = r"--psm 7 -c tessedit_char_whitelist=0123456789:"
         extracted_time = tes.image_to_string(resized, config=custom_config)
         result = extracted_time.strip()
-        print(f"Extracted Time: {result}")
-
-        print(result)
         return result
 
     def do_content_actions(self, slot: int, actions: list[str]) -> None:
@@ -716,7 +762,7 @@ class Inventory(Ark):
                     break
 
     def is_empty(self, slot: int) -> bool:
-        """Checks if a folder is empty"""
+        """Checks if a slot is empty"""
         roi = (self.SLOTS[slot][0] + 69, self.SLOTS[slot][1] + 76, 27, 15)
         img = self.window.grab_screen(roi)
         masked = self.window.denoise_text(
@@ -862,9 +908,10 @@ class Inventory(Ark):
         self.sleep(0.3)
         pg.hotkey("ctrl", "v", interval=0.2)
         self.sleep(0.3)
-        self.click_at(961, 677)
-        self.sleep(0.5)
-        self.click("left")
+        self.press("enter")
+        self.sleep(0.3)
+        # self.click_at(961, 677)
+        # self.click("left")
 
     def craft(self, item: Item, amount: int) -> None:
         """Crafts the given amount of the given item. Spams 'A' if
