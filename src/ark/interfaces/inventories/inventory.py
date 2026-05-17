@@ -19,9 +19,12 @@ from ...exceptions import (
     ReceivingRemoveInventoryTimeout,
     UnknownFolderIndexError,
     EggStatError,
+    ContextActionError,
 )
 from ...items import Item
 from .._button import Button
+
+# reader = easyocr.Reader(["en"], gpu=False)
 
 
 class Inventory(Ark):
@@ -616,7 +619,104 @@ class Inventory(Ark):
             is not None
         )
 
+    def is_baby_cryo(self, slot: int) -> bool:
+        roi = (self.SLOTS[slot][0], self.SLOTS[slot][1], 46, 46)
+
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/baby.png",
+                region=roi,
+                confidence=0.7,
+            )
+            is not None
+        )
+
+    def get_baby_time_left(self, slot: int) -> int:
+        loc = self.SLOTS[slot]
+        self.move_to(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
+        time.sleep(0.1)
+
+        img = self.window.grab_screen((916, 0, 1003, 1079))
+        masked = self.window.denoise_text(
+            img, (244, 236, 175), variance=45, dilate=True
+        )
+        img = np.asarray(img)
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+        contours, _ = cv.findContours(masked, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+        popup = None
+
+        for cnt in contours:
+            peri = cv.arcLength(cnt, True)
+            approx = cv.approxPolyDP(cnt, 0.02 * peri, True)
+            area: int = cv.contourArea(cnt)
+
+            if len(approx) == 4 and area > 150000 and area < 500000:
+                x, y, w, h = cv.boundingRect(approx)
+                cropped_roi = np.asarray(img)[y : y + h, x : x + w]
+
+                if self.window.locate_in_image(
+                    f"{self.PKG_DIR}/assets/stats/health.png",
+                    cropped_roi,
+                    confidence=0.7,
+                ):
+                    popup = cropped_roi
+        if popup is None:
+            raise
+
+        nursing = self.window.locate_in_image(
+            f"{self.PKG_DIR}/assets/interfaces/nursing.png",
+            popup,
+            confidence=0.7,
+        )
+        if nursing is None:
+            raise
+
+        x, y, w, h = (nursing[0] + nursing[2] + 5, nursing[1] + 12, 100, 19)
+        raise_time_crop = popup[y : y + h, x : x + w]
+        hsv = cv.cvtColor(raise_time_crop, cv.COLOR_BGR2HSV)
+
+        mask1 = cv.inRange(hsv, (95, 112, 215), (110, 146, 255))
+        resized = cv.resize(mask1, None, fx=4, fy=4, interpolation=cv.INTER_LINEAR)
+
+        custom_config = r"--psm 7 -c tessedit_char_whitelist=0123456789:"
+        extracted_time = tes.image_to_string(resized, config=custom_config)
+        result = extracted_time.strip()
+        print(f"Extracted Time: {result}")
+
+        print(result)
+        return result
+
+    def do_content_actions(self, slot: int, actions: list[str]) -> None:
+        roi = (self.SLOTS[slot][0], self.SLOTS[slot][1] + self.SLOTS[slot][3], 258, 214)
+        area = self.SLOTS[slot]
+
+        for i, action in enumerate(actions):
+            start = time.time()
+            while True:
+                if timedout(start, 5):
+                    raise ContextActionError(action)
+
+                if i == 0:
+                    self.click_at(
+                        area[0] + area[2] / 2, area[1] + area[3] / 2, button="right"
+                    )
+                    self.sleep(0.3)
+
+                loc = self.window.locate_template(
+                    f"{self.PKG_DIR}/assets/interfaces/{action}.png",
+                    region=roi,
+                    confidence=0.7,
+                )
+
+                if loc is not None:
+                    self.click_at(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
+                    self.sleep(0.5)
+                    break
+
     def is_empty(self, slot: int) -> bool:
+        """Checks if a folder is empty"""
         roi = (self.SLOTS[slot][0] + 69, self.SLOTS[slot][1] + 76, 27, 15)
         img = self.window.grab_screen(roi)
         masked = self.window.denoise_text(
@@ -627,10 +727,9 @@ class Inventory(Ark):
         )
 
         count = cv.countNonZero(masked)
-        print(count)
-        return count > 5
+        return count < 5
 
-    def get_egg_stats(self, slot: int, **kwargs) -> dict:
+    def get_egg_stats(self, slot: int, **kwargs) -> dict[str, dict | str]:
         area = self.SLOTS[slot]
         self.move_to(area[0] + area[2] / 2, area[1] + area[3] / 2)
 
@@ -647,11 +746,29 @@ class Inventory(Ark):
             else:
                 roi = (area[0] + 98, area[1] - 282, 300, 367)
 
-        img = self.window.grab_screen(roi)
+        start = time.time()
+        female_stat_color = (191, 127, 255)
+        male_stat_color = (253, 190, 0)
+        muta_color = (64, 252, 63)
+        name_color = (250, 249, 245)
 
-        mat = np.asarray(img)
-        mat = cv.cvtColor(mat, cv.COLOR_RGB2BGR)
-        mat = cv.cvtColor(mat, cv.COLOR_BGR2RGB)
+        while True:
+            if timedout(start, 3):
+                raise EggStatError("Could not hover the egg")
+
+            img = self.window.grab_screen(roi)
+
+            mat = np.asarray(img)
+            mat = cv.cvtColor(mat, cv.COLOR_RGB2BGR)
+            mat = cv.cvtColor(mat, cv.COLOR_BGR2RGB)
+
+            nx, ny, nw, nh = (144, 40, 144, 25)
+            name_crop = mat[ny : ny + nh, nx : nx + nw]
+            name_mask = self.window.denoise_text(
+                name_crop, name_color, variance=30, dilate=False
+            )
+            if cv.countNonZero(name_mask) > 50:
+                break
 
         gx, gy, gw, gh = (99, 118, 24, 30)
         ix, iy, iw, ih = (144, 40, 144, 25)
@@ -659,10 +776,7 @@ class Inventory(Ark):
         gender_crop = mat[gy : gy + gh, gx : gx + gw]
         incubation_crop = mat[iy : iy + ih, ix : ix + iw]
 
-        female_stat_color = (191, 127, 255)
-        male_stat_color = (253, 190, 0)
-        muta_color = (64, 252, 63)
-        ret = {}
+        ret: dict[str, dict | str] = {}
 
         for k, v in kwargs.items():
             if k == "maturation":
@@ -706,11 +820,36 @@ class Inventory(Ark):
                 x, y, w, h = roi
                 crop = mat[y : y + h, x : x + w]
 
-                cv.imshow(k, crop)
+                male_mask = self.window.denoise_text(
+                    crop, male_stat_color, variance=30, dilate=False
+                )
+                female_mask = self.window.denoise_text(
+                    crop, female_stat_color, variance=30, dilate=False
+                )
+                muta_mask = self.window.denoise_text(
+                    crop, muta_color, variance=30, dilate=False
+                )
+                is_male = cv.countNonZero(male_mask) > 10
+                is_female = cv.countNonZero(female_mask) > 10
+                is_muta = cv.countNonZero(muta_mask) > 10
+                is_double_muta = (
+                    is_muta
+                    and self.window.locate_in_image(
+                        f"{self.PKG_DIR}/assets/stats/muta.png",
+                        crop,
+                        confidence=0.9,
+                    )
+                    is None
+                )
 
-        cv.imshow("image", mat)
-        cv.waitKey(500)
-        return {}
+                if v == "muta":
+                    ret[k] = {"satisfied": is_muta, "double": is_double_muta}
+                if v == "male":
+                    ret[k] = {"satisfied": is_male}
+                if v == "female":
+                    ret[k] = {"satisfied": is_female}
+
+        return ret
 
     def create_folder(self, name: str) -> None:
         """Creates a folder in the inventory at the classes folder button"""

@@ -106,6 +106,14 @@ class EggStatError(InventoryError):
         return f"Egg Stat Error: {self.error}"
 
 
+class ContextActionError(InventoryError):
+    def __init__(self, action: str) -> None:
+        self.action = action
+
+    def __str__(self) -> str:
+        return f"Context action '{self.action}' failed"
+
+
 class ReceivingRemoveInventoryTimeout(InventoryError):
     """Raised when the 'Receiving Remote Inventory' text does not disappear."""
 
