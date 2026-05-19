@@ -170,7 +170,7 @@ class Structure(Ark):
         img = self.window.denoise_text(img, denoise_rgb=(255, 255, 255), variance=10)
         cv2.imshow("", img)
         cv2.waitKey(1)
-        
+
         raw_result = tes.image_to_string(
             img,
             config="-c tessedit_char_whitelist=0123456789liIxObL --psm 7 -l eng",
@@ -313,4 +313,14 @@ class Structure(Ark):
         """Return whether the Structure can be turned on."""
         return self.inventory.locate_button(
             self.TURN_ON, grayscale=True, confidence=0.85
+        )
+
+    def can_access(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/templates/access_inventory.png",
+                region=(0, 0, 1920, 1080),
+                confidence=0.7,
+            )
+            is not None
         )

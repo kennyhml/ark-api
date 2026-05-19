@@ -41,12 +41,10 @@ class Player(Ark):
     _STAM_BAR = (1850, 955, 70, 65)
 
     @overload
-    def __init__(self, *, stats: Stats) -> None:
-        ...
+    def __init__(self, *, stats: Stats) -> None: ...
 
     @overload
-    def __init__(self, health: int, food: int, water: int, weight: int) -> None:
-        ...
+    def __init__(self, health: int, food: int, water: int, weight: int) -> None: ...
 
     def __init__(
         self, health=None, food=None, water=None, weight=None, *, stats=None
@@ -112,6 +110,22 @@ class Player(Ark):
         input.moveRel(
             round(amount * self._lr_factor * self._fov_factor),
             0,
+            0,
+            None,
+            False,
+            False,
+            True,
+        )
+        self.sleep(delay)
+
+    def turn_by(self, x, y, delay: int | float = 0.1) -> None:
+        """Turns the players' x-axis by the given amount"""
+        x = round(x * self._lr_factor * self._fov_factor)
+        y = round(y * self._ud_factor * self._fov_factor)
+        print(f"moving {x} {y}")
+        input.moveRel(
+            x,
+            y,
             0,
             None,
             False,

@@ -6,8 +6,11 @@ import pyautogui as pg  # type: ignore[import]
 
 from ... import config
 from ..._helpers import await_event, get_center
-from ...exceptions import (InventoryNotAccessibleError, MissingItemErrror,
-                           NoItemsAddedError)
+from ...exceptions import (
+    InventoryNotAccessibleError,
+    MissingItemErrror,
+    NoItemsAddedError,
+)
 from ...items import Item
 from .._button import Button
 from .inventory import Inventory
@@ -70,6 +73,33 @@ class PlayerInventory(Inventory):
         """Waits for items to be added to the inventory"""
         if not await_event(self.received_item, max_duration=30 * config.TIMER_FACTOR):
             raise NoItemsAddedError(item.name if isinstance(item, Item) else item)
+
+    def put_all(self, term: str | None = None) -> None:
+        last_filled_row = 6
+        if term is not None:
+            self.search(term, False)
+
+        start = 0 if term is not None else 1
+        prev = pg.PAUSE
+        pg.PAUSE = 0
+        try:
+            while not self.is_empty(start):
+                self.window.begin_snapshot()
+                for row in range(last_filled_row, -1, -1):
+                    first_slot = row * 6
+                    if self.is_empty(first_slot):
+                        continue
+                    last_filled_row = max(last_filled_row, row)
+
+                    for slot in range(5, -1, -1):
+                        area = self.SLOTS[first_slot + slot]
+                        self.move_to(get_center(area))
+                        self.press(self.keybinds.transfer)
+                        self.sleep(0.01)
+                self.window.end_snapshot()
+        finally:
+            pg.PAUSE = prev
+            self.window.end_snapshot()
 
     def transfer(
         self, item: Item, amount: int, target: Optional[Inventory] = None
@@ -138,7 +168,7 @@ class PlayerInventory(Inventory):
             self.click_at(pos)
             self.press(self.keybinds.use)
             return
-        
+
         before = self.count(item)
         self.click_at(self._YOU, delay=0.2)
         self.sleep(1)

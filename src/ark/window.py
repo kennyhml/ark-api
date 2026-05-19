@@ -12,10 +12,9 @@ from screeninfo import get_monitors  # type: ignore[import]
 import pyscreeze
 
 from ._helpers import get_center
-from . import config
 
 pg.useImageNotFoundException(False)
-pyscreeze.USE_IMAGE_NOT_FOUND_EXCEPTION = False 
+pyscreeze.USE_IMAGE_NOT_FOUND_EXCEPTION = False
 
 
 class ArkWindow:
@@ -42,6 +41,8 @@ class ArkWindow:
 
     _CORRECT_Y = 31
     _CORRECT_X = 8
+
+    _snapshot = None
 
     def __init__(self) -> None:
         self._boundaries = self.get_boundaries()
@@ -81,14 +82,12 @@ class ArkWindow:
     @overload
     def grab_screen(
         self, region: tuple[int, int, int, int], path: str, convert: bool = True
-    ) -> str:
-        ...
+    ) -> str: ...
 
     @overload
     def grab_screen(
-        self, region: tuple[int, int, int, int], path = None, convert: bool = True
-    ) -> screenshot.ScreenShot:
-        ...
+        self, region: tuple[int, int, int, int], path=None, convert: bool = True
+    ) -> screenshot.ScreenShot: ...
 
     def grab_screen(
         self,
@@ -121,13 +120,35 @@ class ArkWindow:
                 region = self.convert_region(region)
             x, y, w, h = region
 
+            if self._snapshot is not None:
+                full_raw = self._snapshot.raw
+                full_w = self._snapshot.width
+
+                BYTES_PER_PIXEL = 4
+                row_stride = full_w * BYTES_PER_PIXEL
+
+                cropped_data = bytearray()
+                for row in range(y, y + h):
+                    start_idx = (row * row_stride) + (x * BYTES_PER_PIXEL)
+                    end_idx = start_idx + (w * BYTES_PER_PIXEL)
+                    cropped_data.extend(full_raw[start_idx:end_idx])
+
+                monitor_dict = {"left": x, "top": y, "width": w, "height": h}
+                img_cropped = screenshot.ScreenShot(cropped_data, monitor_dict)
+                return img_cropped
+
             region_dict = {"left": x, "top": y, "width": w, "height": h}
             img = sct.grab(region_dict)
-
             if path is None:
                 return img
             tools.to_png(img.rgb, img.size, output=path)
             return path
+
+    def begin_snapshot(self) -> None:
+        self._snapshot = self.grab_screen((0, 0, 1920, 1080))
+
+    def end_snapshot(self) -> None:
+        self._snapshot = None
 
     def set_foreground(self) -> None:
         try:
@@ -304,8 +325,7 @@ class ArkWindow:
         grayscale: bool = False,
         convert: bool = True,
         center: Literal[True],
-    ) -> tuple[int, int] | None:
-        ...
+    ) -> tuple[int, int] | None: ...
 
     @overload
     def locate_template(
@@ -317,8 +337,7 @@ class ArkWindow:
         grayscale: bool = False,
         convert: bool = True,
         center: Literal[False] = False,
-    ) -> tuple[int, int, int, int] | None:
-        ...
+    ) -> tuple[int, int, int, int] | None: ...
 
     def locate_template(
         self,

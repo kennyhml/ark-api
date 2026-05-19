@@ -11,6 +11,7 @@ class CryobreederState(str, Enum):
     UNPREPARED = "unprepared"
     READY_TO_BREED = "ready_to_breed"
     BREEDING = "breeding"
+    UNKNOWN = "unknown"
 
 
 @final
@@ -54,9 +55,9 @@ class CryoBreeder(Structure):
             is not None
         ):
             return CryobreederState.BREEDING
-        raise InterfaceError("Could not determine breeder state.")
+        return CryobreederState.UNKNOWN
 
-    def breed(self) -> None:
+    def start_breed(self) -> None:
         start = time.time()
         if self.state not in (
             CryobreederState.UNPREPARED,
@@ -69,7 +70,7 @@ class CryoBreeder(Structure):
             if timedout(start, 30):
                 raise
 
-            if last_click is None or timedout(last_click, 3):
+            if last_click is None or timedout(last_click, 5):
                 self.click_at(self.BREED_BUTTON.location)
                 last_click = time.time()
             time.sleep(0.1)

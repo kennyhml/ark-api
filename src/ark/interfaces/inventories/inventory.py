@@ -274,7 +274,12 @@ class Inventory(Ark):
         # lowercasing the term because pyautogui has a weird gist where it will
         # actually use shift + letter to capitalize it, which opens the chat somehow
         if isinstance(item, str):
-            pg.typewrite(item.lower(), interval=0.001)
+            if "*" in item:
+                set_clipboard(item)
+                self.sleep(0.3)
+                pg.hotkey("ctrl", "v", interval=0.2)
+            else:
+                pg.typewrite(item.lower(), interval=0.001)
         else:
             pg.typewrite(item.search_name.lower(), interval=0.001)
 
@@ -328,7 +333,7 @@ class Inventory(Ark):
             raise InventoryNotOpenError
 
         def press_button() -> None:
-            while (time.time() - self.LAST_TRANSFER_ALL) < 2:
+            while (time.time() - self.LAST_TRANSFER_ALL) < 5:
                 self.sleep(0.1)
 
             self.click_at(self._TRANSFER_ALL.location, delay=0.2)
@@ -680,6 +685,57 @@ class Inventory(Ark):
             is not None
         )
 
+    def is_cryo_female(self, slot: int) -> bool:
+        roi = (self.SLOTS[slot][0] + 22, self.SLOTS[slot][1] + 26, 58, 53)
+
+        img = self.window.grab_screen(roi)
+        masked = self.window.denoise_text(
+            img, (250, 172, 252), variance=27, dilate=False
+        )
+
+        return cv.countNonZero(masked) > 5
+
+    def is_cryo_ready_to_breed(self, slot: int) -> int:
+        loc = self.SLOTS[slot]
+        self.move_to(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
+        time.sleep(0.1)
+
+        img = self.window.grab_screen((916, 0, 1003, 1079))
+        masked = self.window.denoise_text(
+            img, (244, 236, 175), variance=45, dilate=True
+        )
+        img = np.asarray(img)
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+        contours, _ = cv.findContours(masked, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+        popup = None
+
+        for cnt in contours:
+            peri = cv.arcLength(cnt, True)
+            approx = cv.approxPolyDP(cnt, 0.02 * peri, True)
+            area: int = cv.contourArea(cnt)
+
+            if len(approx) == 4 and area > 150000 and area < 500000:
+                x, y, w, h = cv.boundingRect(approx)
+                cropped_roi = np.asarray(img)[y : y + h, x : x + w]
+
+                if self.window.locate_in_image(
+                    f"{self.PKG_DIR}/assets/stats/health.png",
+                    cropped_roi,
+                    confidence=0.7,
+                ):
+                    popup = cropped_roi
+                    break
+        if popup is None:
+            raise
+
+        return self.window.locate_in_image(
+            f"{self.PKG_DIR}/assets/interfaces/ready_to_mate.png",
+            popup,
+            confidence=0.7,
+        )
+
     def get_baby_time_left(self, slot: int) -> int:
         loc = self.SLOTS[slot]
         self.move_to(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
@@ -711,6 +767,7 @@ class Inventory(Ark):
                     confidence=0.7,
                 ):
                     popup = cropped_roi
+                    break
         if popup is None:
             raise
 
@@ -732,7 +789,19 @@ class Inventory(Ark):
         custom_config = r"--psm 7 -c tessedit_char_whitelist=0123456789:"
         extracted_time = tes.image_to_string(resized, config=custom_config)
         result = extracted_time.strip()
-        return result
+
+        sections = result.split(":")
+        if len(sections) == 1:
+            seconds = sections
+            return int(seconds)
+        if len(sections) == 2:
+            minutes, seconds = sections
+            return int(minutes) * 60 + int(seconds)
+        if len(sections) == 3:
+            hours, minutes, seconds = sections
+            return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
+        raise ValueError(f"Could not parse raise time {result}")
 
     def do_content_actions(self, slot: int, actions: list[str]) -> None:
         roi = (self.SLOTS[slot][0], self.SLOTS[slot][1] + self.SLOTS[slot][3], 258, 214)
@@ -757,7 +826,10 @@ class Inventory(Ark):
                 )
 
                 if loc is not None:
-                    self.click_at(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
+                    if action == "send_to":
+                        self.move_to(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
+                    else:
+                        self.click_at(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
                     self.sleep(0.5)
                     break
 
@@ -877,7 +949,7 @@ class Inventory(Ark):
                 )
                 is_male = cv.countNonZero(male_mask) > 10
                 is_female = cv.countNonZero(female_mask) > 10
-                is_muta = cv.countNonZero(muta_mask) > 10
+                is_muta = is_male and cv.countNonZero(muta_mask) > 10
                 is_double_muta = (
                     is_muta
                     and self.window.locate_in_image(
