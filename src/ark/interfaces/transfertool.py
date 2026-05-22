@@ -39,7 +39,7 @@ class TransferTool(Ark):
 
         img = self.window.denoise_text(img, (101, 101, 101), variance=5, dilate=False)
         count = cv.countNonZero(img)
-        return count > 50
+        return count > 10
 
     def use_preset(self, preset: int):
         positions = [
@@ -51,7 +51,7 @@ class TransferTool(Ark):
         ]
 
         start = time.time()
-        last_click = time.time()
+        last_click = None
 
         while not self.is_presets_open():
             if timedout(start, 15):
@@ -60,7 +60,9 @@ class TransferTool(Ark):
             if last_click is None or timedout(last_click, 3):
                 self.click_at(943, 933)
                 last_click = time.time()
+            self.sleep(0.3)
 
+        last_click = None
         while self.is_presets_open():
             if timedout(start, 15):
                 raise InterfaceError(f"Failed to use preset {preset}")
@@ -68,6 +70,10 @@ class TransferTool(Ark):
             if last_click is None or timedout(last_click, 3):
                 self.click_at(positions[preset - 1])
                 last_click = time.time()
+            self.sleep(0.3)
+
+        self.click_at(580, 928)
+        self.sleep(0.5)
 
     def is_open(self) -> bool:
         """Checks if the menu is open."""

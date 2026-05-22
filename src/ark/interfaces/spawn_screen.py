@@ -62,7 +62,7 @@ class SpawnScreen(Ark):
         if not fast:
             self.sleep(0.3)
 
-        position = self._find_bed() or self._find_x()
+        position = self._find_bed() or self._find_cd_bed() or self._find_x()
         if position is None:
             raise BedNotFoundError(f"Could not find '{bed_name}'!")
 
@@ -76,7 +76,7 @@ class SpawnScreen(Ark):
                 break
 
             attempts += 1
-            if attempts >= 2:
+            if attempts >= 5:
                 raise BedNotFoundError(f"Could not select '{bed_name}'!")
 
             self.search(bed_name)
@@ -89,7 +89,8 @@ class SpawnScreen(Ark):
 
         self.spawn()
         if await_event(self._is_travelling, max_duration=15 * config.TIMER_FACTOR):
-            self.sleep(2)
+            if not fast:
+                self.sleep(2)
             return
         raise PlayerDidntTravelError(f"Failed to travel to bed '{bed_name}'!")
 
@@ -124,6 +125,30 @@ class SpawnScreen(Ark):
 
         lower_bound = tuple(max(0, i - 7) for i in (0, 255, 255))
         upper_bound = tuple(min(255, i + 7) for i in (0, 255, 255))
+
+        mask = cv.inRange(img, lower_bound, upper_bound)
+        contours, _ = cv.findContours(
+            mask.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
+        )
+
+        if len(contours) == 0:
+            return None
+
+        contour = max(contours, key=cv.contourArea)
+        if cv.contourArea(contour) < 10:
+            return None
+
+        point = get_center(cv.boundingRect(contour))
+        return point[0] + 160, point[1] + 70
+
+    def _find_cd_bed(self) -> tuple[int, int] | None:
+        """Finds the icon of a bed on the map, assuming the bed has already
+        been searched."""
+        img_arr = np.array(self.window.grab_screen(self._BEDS_REGION))
+        img = cv.cvtColor(img_arr, cv.COLOR_BGR2RGB)
+
+        lower_bound = tuple(max(0, i - 10) for i in (122, 201, 203))
+        upper_bound = tuple(min(255, i + 10) for i in (122, 201, 203))
 
         mask = cv.inRange(img, lower_bound, upper_bound)
         contours, _ = cv.findContours(
