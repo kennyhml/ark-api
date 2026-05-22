@@ -5,11 +5,12 @@ from typing import Optional, final
 import pyautogui as pg  # type: ignore[import]
 
 from ... import config
-from ..._helpers import await_event, get_center
+from ..._helpers import await_event, get_center, set_clipboard
 from ...exceptions import (
     InventoryNotAccessibleError,
     MissingItemErrror,
     NoItemsAddedError,
+    InventoryNotOpenError,
 )
 from ...items import Item
 from .._button import Button
@@ -79,7 +80,13 @@ class PlayerInventory(Inventory):
         if term is not None:
             self.search(term, False)
 
-        start = 0 if term is not None else 1
+        start = 0
+        while self.is_folder(start):
+            start += 1
+
+        if term is None:
+            start += 1
+
         prev = pg.PAUSE
         pg.PAUSE = 0
         try:
@@ -87,19 +94,36 @@ class PlayerInventory(Inventory):
                 self.window.begin_snapshot()
                 for row in range(last_filled_row, -1, -1):
                     first_slot = row * 6
-                    if self.is_empty(first_slot):
+                    if row != 0 and self.is_empty(first_slot):
                         continue
                     last_filled_row = max(last_filled_row, row)
 
                     for slot in range(5, -1, -1):
+                        # skip implants and folders
+                        if row == 0 and slot < start:
+                            continue
                         area = self.SLOTS[first_slot + slot]
                         self.move_to(get_center(area))
                         self.press(self.keybinds.transfer)
                         self.sleep(0.01)
                 self.window.end_snapshot()
+                self.sleep(0.2)
         finally:
             pg.PAUSE = prev
             self.window.end_snapshot()
+
+    def create_folder(self, name: str) -> None:
+        if not self.is_open():
+            raise InventoryNotOpenError
+
+        set_clipboard(name)
+
+        self.click_at(515, 188)
+        self.sleep(0.3)
+        pg.hotkey("ctrl", "v", interval=0.2)
+        self.sleep(0.3)
+        self.press("enter")
+        self.sleep(0.3)
 
     def transfer(
         self, item: Item, amount: int, target: Optional[Inventory] = None

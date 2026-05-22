@@ -11,9 +11,8 @@ class Bed(Structure):
         super().__init__(name, "assets/wheels/bed.png")
         self.interface = SpawnScreen()
 
-    def spawn(self) -> None:
-        self.interface.travel_to(self.name)
-
+    def spawn(self, fast: bool = False) -> None:
+        self.interface.travel_to(self.name, fast)
 
     def lay_down(self) -> None:
         self.action_wheel.activate()

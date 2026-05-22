@@ -1,6 +1,6 @@
-import cv2 as cv  # type:ignore[import]
+import cv2 as cv  # type: ignore[import]
 import numpy as np
-import pyautogui  # type:ignore[import]
+import pyautogui  # type: ignore[import]
 
 from .._ark import Ark
 from .._helpers import await_event, get_center
@@ -27,14 +27,14 @@ class SpawnScreen(Ark):
         """Clicks the spawn button"""
         self.click_at(self.SPAWN_BUTTON)
 
-    def search(self, name: str) -> None:
+    def search(self, name: str, is_first=False) -> None:
         """Searches for a bed"""
         self.click_at(self.SEARCH_BAR)
-        with pyautogui.hold("ctrl"):
-            pyautogui.press("a")
+        if not is_first:
+            with pyautogui.hold("ctrl"):
+                pyautogui.press("a")
 
         pyautogui.typewrite(name.lower(), interval=0.001)
-        self.sleep(0.3)
 
     def open(self) -> None:
         """Opens the bed menu. Times out after 30 unsuccessful
@@ -43,12 +43,12 @@ class SpawnScreen(Ark):
         while not self.is_open():
             attempt += 1
             self.press(self.keybinds.use)
-            self.sleep(1)
+            self.sleep(0.2)
 
             if attempt > 30:
                 raise BedNotAccessibleError("Failed to access the bed!")
 
-    def travel_to(self, bed_name: str) -> None:
+    def travel_to(self, bed_name: str, fast: bool = False) -> None:
         """Travels to a bed given it's name. If the spawn screen is not
         already open, it will be opened first.
 
@@ -58,18 +58,20 @@ class SpawnScreen(Ark):
             The name of the bed to travel to
         """
         self.open()
-        self.search(bed_name)
+        self.search(bed_name, True)
+        if not fast:
+            self.sleep(0.3)
 
         position = self._find_bed() or self._find_x()
         if position is None:
             raise BedNotFoundError(f"Could not find '{bed_name}'!")
 
-        self.click_at(position, delay=0.5)
-        self.sleep(0.5)
+        self.click_at(position, delay=0.5 if not fast else 0.1)
+        self.sleep(0.1)
 
         attempts = 0
         while not self._bed_is_selected():
-            self.click_at(position, delay=0.5)
+            self.click_at(position)
             if await_event(self._bed_is_selected, max_duration=1):
                 break
 
@@ -80,7 +82,7 @@ class SpawnScreen(Ark):
             self.search(bed_name)
             position = self._find_bed() or self._find_x()
 
-        if self._spawn_region_is_selected():
+        if not fast and self._spawn_region_is_selected():
             raise BedNotFoundError(
                 f"Could not find '{bed_name}'! Random spawn region was selected!"
             )

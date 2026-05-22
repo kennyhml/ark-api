@@ -21,10 +21,12 @@ class Ark:
     """
 
     PKG_DIR = str(Path(__file__).parent)
-    window: ArkWindow = None  # type:ignore[assignment]
-    keybinds: InputSettings = None  # type:ignore[assignment]
-    settings: UserSettings = None  # type:ignore[assignment]
+    window: ArkWindow = None  # type: ignore[assignment]
+    keybinds: InputSettings = None  # type: ignore[assignment]
+    settings: UserSettings = None  # type: ignore[assignment]
     mouse = Controller()
+    last_interface_exit: float | None = None
+    last_view_changed: float | None = None
 
     def __init__(self, reinit: bool = False) -> None:
         if Ark.window is None or reinit:

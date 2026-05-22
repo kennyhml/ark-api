@@ -94,6 +94,10 @@ class Player(Ark):
 
     def turn_y_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' y-axis by the given amount"""
+        while self.last_interface_exit is not None and not timedout(
+            self.last_interface_exit, 1
+        ):
+            self.sleep(0.1)
         input.moveRel(
             0,
             round(amount * self._ud_factor * self._fov_factor),
@@ -103,10 +107,15 @@ class Player(Ark):
             False,
             True,
         )
+        Ark.last_view_changed = time.time()
         self.sleep(delay)
 
     def turn_x_by(self, amount: int, delay: int | float = 0.1) -> None:
         """Turns the players' x-axis by the given amount"""
+        while self.last_interface_exit is not None and not timedout(
+            self.last_interface_exit, 1
+        ):
+            self.sleep(0.1)
         input.moveRel(
             round(amount * self._lr_factor * self._fov_factor),
             0,
@@ -116,13 +125,17 @@ class Player(Ark):
             False,
             True,
         )
+        Ark.last_view_changed = time.time()
         self.sleep(delay)
 
     def turn_by(self, x, y, delay: int | float = 0.1) -> None:
         """Turns the players' x-axis by the given amount"""
+        while self.last_interface_exit is not None and not timedout(
+            self.last_interface_exit, 1
+        ):
+            self.sleep(0.1)
         x = round(x * self._lr_factor * self._fov_factor)
         y = round(y * self._ud_factor * self._fov_factor)
-        print(f"moving {x} {y}")
         input.moveRel(
             x,
             y,
@@ -132,6 +145,7 @@ class Player(Ark):
             False,
             True,
         )
+        Ark.last_view_changed = time.time()
         self.sleep(delay)
 
     def attack(self) -> None:

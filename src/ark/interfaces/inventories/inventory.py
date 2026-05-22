@@ -186,6 +186,10 @@ class Inventory(Ark):
         """
         attempts = 0
         while not self.is_open():
+            while self.last_view_changed is not None and not timedout(
+                self.last_view_changed, 0.5
+            ):
+                self.sleep(0.1)
             attempts += 1
 
             key = self.keybinds.target_inventory if default_key else self.keybinds.use
@@ -220,6 +224,7 @@ class Inventory(Ark):
 
             if attempts > (40 * config.TIMER_FACTOR / config.INVENTORY_OPEN_INTERVAL):
                 raise InventoryNotClosableError(self)
+        Ark.last_interface_exit = time.time()
         self.sleep(0.3)
 
     @overload
@@ -320,6 +325,7 @@ class Inventory(Ark):
         self,
         items: Optional[Iterable[Item | str] | Item | str] = None,
         delete_search: bool = True,
+        enforce_from_slot: int | None = None,
     ) -> None:
         """Searches for an iterable of Items or words and transfers all. If no
         items are passed, it simply transfers all without searching for anything.
@@ -333,11 +339,49 @@ class Inventory(Ark):
             raise InventoryNotOpenError
 
         def press_button() -> None:
-            while (time.time() - self.LAST_TRANSFER_ALL) < 5:
-                self.sleep(0.1)
+            start = time.time()
+            while enforce_from_slot is None or not self.is_empty(enforce_from_slot):
+                if (time.time() - self.LAST_TRANSFER_ALL) < 5:
+                    self.sleep(0.1)
+                    continue
 
-            self.click_at(self._TRANSFER_ALL.location, delay=0.2)
-            Inventory.LAST_TRANSFER_ALL = time.time()
+                if (
+                    items is None
+                    and enforce_from_slot is not None
+                    and timedout(start, 5)
+                    and self.is_in_folder()
+                ):
+                    last_filled_row = 6
+                    # got the folder glitch, transferring all wont work..
+                    prev = pg.PAUSE
+                    pg.PAUSE = 0
+                    try:
+                        while not self.is_empty(enforce_from_slot):
+                            self.window.begin_snapshot()
+                            for row in range(last_filled_row, -1, -1):
+                                first_slot = row * 6
+                                if row != 0 and self.is_empty(first_slot):
+                                    continue
+                                last_filled_row = max(last_filled_row, row)
+
+                                for slot in range(5, -1, -1):
+                                    area = self.SLOTS[first_slot + slot]
+                                    self.move_to(get_center(area))
+                                    if row == 0:
+                                        self.sleep(0.05)
+                                    self.press(self.keybinds.transfer)
+                                    self.sleep(0.01)
+                            self.window.end_snapshot()
+                            self.sleep(0.2)
+                    finally:
+                        pg.PAUSE = prev
+                        self.window.end_snapshot()
+                    continue
+
+                self.click_at(self._TRANSFER_ALL.location, delay=0.2)
+                Inventory.LAST_TRANSFER_ALL = time.time()
+                if enforce_from_slot is None:
+                    break
 
         if items is None:
             press_button()
@@ -352,6 +396,7 @@ class Inventory(Ark):
 
         for item in items:
             self.search(item, delete_prior=delete_search or len(items) > 1)
+
             press_button()
 
     @final
@@ -618,7 +663,7 @@ class Inventory(Ark):
         result: str = tes.image_to_string(padded, config=config).rstrip()
         return result
 
-    def is_folder(self, slot: int) -> bool:
+    def is_folder(self, slot: int, folder: str | None = None) -> bool:
         roi = (self.SLOTS[slot][0], self.SLOTS[slot][1], 54, 30)
         return (
             self.window.locate_template(
@@ -656,6 +701,11 @@ class Inventory(Ark):
                     self.sleep(0.1)
                 last_click = time.time()
 
+                # make sure we dont keep hovering the slot if it isn the first
+                if slot > 1:
+                    self.sleep(0.3)
+                    self.select_slot(0)
+
     def close_current_folder(self):
         loc = self.SLOTS[0]
         self.move_to(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
@@ -667,7 +717,7 @@ class Inventory(Ark):
             if timedout(start, 15):
                 raise FolderError("close")
 
-            if last_click is None or timedout(last_click, 3):
+            if last_click is None or timedout(last_click, 1):
                 for _ in range(2):
                     self.click("left")
                     self.sleep(0.1)
@@ -789,10 +839,11 @@ class Inventory(Ark):
         custom_config = r"--psm 7 -c tessedit_char_whitelist=0123456789:"
         extracted_time = tes.image_to_string(resized, config=custom_config)
         result = extracted_time.strip()
+        print(f"ocr raise timer: {result}")
 
         sections = result.split(":")
         if len(sections) == 1:
-            seconds = sections
+            seconds = sections[0]
             return int(seconds)
         if len(sections) == 2:
             minutes, seconds = sections
@@ -832,6 +883,14 @@ class Inventory(Ark):
                         self.click_at(loc[0] + loc[2] / 2, loc[1] + loc[3] / 2)
                     self.sleep(0.5)
                     break
+                elif (
+                    slot % 6 == 5
+                    and action == "nearest_incubator"
+                    and timedout(start, 3)
+                ):
+                    self.click("left")
+                    self.sleep(0.5)
+                    break
 
     def is_empty(self, slot: int) -> bool:
         """Checks if a slot is empty"""
@@ -839,9 +898,9 @@ class Inventory(Ark):
         img = self.window.grab_screen(roi)
         masked = self.window.denoise_text(
             img,
-            (214, 177, 45),
+            (255, 205, 56),
             dilate=False,
-            variance=30,
+            variance=5,
         )
 
         count = cv.countNonZero(masked)
@@ -850,6 +909,7 @@ class Inventory(Ark):
     def get_egg_stats(self, slot: int, **kwargs) -> dict[str, dict | str]:
         area = self.SLOTS[slot]
         self.move_to(area[0] + area[2] / 2, area[1] + area[3] / 2)
+        self.sleep(0.3)
 
         # displays in a different loc depending on the slot
         flipped = slot % 6 in (4, 5)
@@ -929,7 +989,7 @@ class Inventory(Ark):
                 loc = self.window.locate_in_image(
                     stat_img,
                     mat,
-                    confidence=0.7,
+                    confidence=0.85,
                 )
                 if loc is None:
                     raise EggStatError(f"Could not find stat {k}")
