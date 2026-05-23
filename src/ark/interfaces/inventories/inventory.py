@@ -740,7 +740,7 @@ class Inventory(Ark):
 
         img = self.window.grab_screen(roi)
         masked = self.window.denoise_text(
-            img, (250, 172, 252), variance=27, dilate=False
+            img, (250, 172, 252), variance=30, dilate=False
         )
 
         return cv.countNonZero(masked) > 5
