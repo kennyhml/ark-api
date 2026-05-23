@@ -8,6 +8,8 @@ import cv2 as cv
 
 class TransferTool(Ark):
 
+    last_transfer = None
+
     def open(self) -> None:
         """Opens the escape menu."""
         start = time.time()
@@ -41,7 +43,7 @@ class TransferTool(Ark):
         count = cv.countNonZero(img)
         return count > 10
 
-    def use_preset(self, preset: int):
+    def use_preset(self, preset: int, times: int):
         positions = [
             (869, 785),
             (869, 812),
@@ -72,8 +74,16 @@ class TransferTool(Ark):
                 last_click = time.time()
             self.sleep(0.3)
 
+        for _ in range(times):
+            self.transfer()
+
+    def transfer(self):
+        while self.last_transfer is not None and time.time() - self.last_transfer < 1.2:
+            self.sleep(0.1)
+
         self.click_at(580, 928)
         self.sleep(0.5)
+        self.last_transfer = time.time()
 
     def is_open(self) -> bool:
         """Checks if the menu is open."""
@@ -82,6 +92,16 @@ class TransferTool(Ark):
                 f"{self.PKG_DIR}/assets/interfaces/items_to_transfer.png",
                 region=(836, 121, 247, 44),
                 confidence=0.8,
+            )
+            is not None
+        )
+
+    def no_items_transferred(self) -> bool:
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/0_items_transferred.png",
+                region=(872, 820, 83, 73),
+                confidence=0.85,
             )
             is not None
         )
