@@ -28,6 +28,7 @@ def state_checker(func: Callable):
 
     return wrapper
 
+
 def get_filepath(filepath: str) -> str:
     """Validates the given filepath to allow to adjust files to the package
     path as well as loading files from the relative bot files."""
@@ -76,6 +77,7 @@ def await_event(
     @state_checker
     def sleep(s):
         time.sleep(s)
+
     if not func.__name__ == "<lambda>":
         log_str = f"Awaiting function '{func.__name__}' "
     else:
