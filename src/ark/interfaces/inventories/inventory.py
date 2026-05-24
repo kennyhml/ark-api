@@ -348,8 +348,7 @@ class Inventory(Ark):
                 if (
                     items is None
                     and enforce_from_slot is not None
-                    and timedout(start, 5)
-                    and self.is_in_folder()
+                    and timedout(start, 15)
                 ):
                     last_filled_row = 6
                     # got the folder glitch, transferring all wont work..

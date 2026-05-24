@@ -67,7 +67,7 @@ class CryoBreeder(Structure):
 
         last_click = None
         while self.state != CryobreederState.READY_TO_BREED:
-            if timedout(start, 60):
+            if timedout(start, 90):
                 raise
 
             if last_click is None or timedout(last_click, 5):
@@ -77,7 +77,7 @@ class CryoBreeder(Structure):
 
         last_click = None
         while self.state != CryobreederState.BREEDING:
-            if timedout(start, 60):
+            if timedout(start, 90):
                 raise
 
             if last_click is None or timedout(last_click, 3):
