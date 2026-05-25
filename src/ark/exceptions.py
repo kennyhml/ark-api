@@ -114,6 +114,14 @@ class ContextActionError(InventoryError):
         return f"Context action '{self.action}' failed"
 
 
+class PopupError(InventoryError):
+    def __init__(self, action: str) -> None:
+        self.action = action
+
+    def __str__(self) -> str:
+        return f"Popup Error'{self.action}'"
+
+
 class FolderError(InventoryError):
     def __init__(self, action: str) -> None:
         self.action = action

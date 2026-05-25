@@ -21,7 +21,9 @@ from ...exceptions import (
     EggStatError,
     ContextActionError,
     FolderError,
+    PopupError,
 )
+
 from ...items import Item
 from .._button import Button
 
@@ -777,7 +779,7 @@ class Inventory(Ark):
                     popup = cropped_roi
                     break
         if popup is None:
-            raise
+            raise PopupError("Could not find the item tooltip")
 
         return self.window.locate_in_image(
             f"{self.PKG_DIR}/assets/interfaces/ready_to_mate.png",
@@ -997,14 +999,39 @@ class Inventory(Ark):
                 x, y, w, h = roi
                 crop = mat[y : y + h, x : x + w]
 
-                male_mask = self.window.denoise_text(
-                    crop, male_stat_color, variance=30, dilate=False
+                hsv = cv.cvtColor(crop, cv.COLOR_BGR2HSV)
+                mask = cv.inRange(hsv, (0, 210, 135), (180, 255, 255))
+                resized = cv.resize(
+                    mask, None, fx=4, fy=4, interpolation=cv.INTER_LINEAR
                 )
+                inverted = cv.bitwise_not(resized)
+                padded = cv.copyMakeBorder(
+                    inverted, 20, 20, 20, 20, cv.BORDER_CONSTANT, value=255
+                )
+                result: str = tes.image_to_string(
+                    padded,
+                    config="-c tessedit_char_whitelist=0123456789lIWVSi --psm 10 -l eng",
+                ).rstrip()
+                to_replace = {
+                    "/": "7",
+                    "l": "1",
+                    "I": "1",
+                    "W": "11",
+                    "V": "1",
+                    "i": "1",
+                    "S": "5",
+                }
+                for _k, _v in to_replace.items():
+                    result = result.replace(_k, _v)
+                print(f"read {result} for {k}")
                 female_mask = self.window.denoise_text(
                     crop, female_stat_color, variance=30, dilate=False
                 )
                 muta_mask = self.window.denoise_text(
                     crop, muta_color, variance=30, dilate=False
+                )
+                male_mask = self.window.denoise_text(
+                    crop, male_stat_color, variance=30, dilate=False
                 )
                 is_male = cv.countNonZero(male_mask) > 10
                 is_female = cv.countNonZero(female_mask) > 10
@@ -1020,7 +1047,11 @@ class Inventory(Ark):
                 )
 
                 if v == "muta":
-                    ret[k] = {"satisfied": is_muta, "double": is_double_muta}
+                    ret[k] = {
+                        "satisfied": is_muta,
+                        "double": is_double_muta,
+                        "stat": int(result or 0),
+                    }
                 if v == "male":
                     ret[k] = {"satisfied": is_male}
                 if v == "female":
