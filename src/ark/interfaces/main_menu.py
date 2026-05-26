@@ -30,4 +30,10 @@ class MainMenu(Ark):
                 confidence=0.8,
             )
             is not None
+            or self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/main_menu_ok.png",
+                region=(832, 587, 256, 64),
+                confidence=0.8,
+            )
+            is not None
         )

@@ -13,7 +13,7 @@ class HUDInfo(Ark):
     gauntlets are equipped.
     """
 
-    _DAY_REGION = (0, 10, 214, 95)
+    _DAY_REGION = (6, 41, 123, 34)
     _TIMER_WORD_REGION = (90, 130, 78, 28)
     _TIMER_REGION = (164, 127, 69, 30)
 
@@ -25,7 +25,6 @@ class HUDInfo(Ark):
                 pyautogui.press(self.keybinds.hud_info)
             else:
                 pyautogui.keyDown(self.keybinds.hud_info)
-
             if await_event(self.is_open, max_duration=3):
                 return
             if self.settings.toggle_hud:
@@ -36,6 +35,21 @@ class HUDInfo(Ark):
             attempts += 1
             if attempts > 4:
                 raise InterfaceError("Failed to open HUD!")
+
+    def set_enabled(self, enabled: bool):
+        def is_open() -> bool:
+            """Returns whether the HUD info interface is open."""
+            return (
+                self.window.locate_template(
+                    f"{self.PKG_DIR}/assets/templates/nox.png",
+                    region=(13, 969, 83, 80),
+                    confidence=0.75,
+                )
+                is not None
+            )
+
+        if is_open() != enabled:
+            pyautogui.press(self.keybinds.toggle_hud)
 
     def is_open(self) -> bool:
         """Returns whether the HUD info interface is open."""

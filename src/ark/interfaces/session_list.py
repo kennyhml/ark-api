@@ -44,12 +44,12 @@ class SessionList(Ark):
 
         while self.is_open():
             self.join_server()
-            self.sleep(45)
+            self.sleep(15)
 
             if not self._server_is_ghosting():
                 continue
 
-            self.sleep(300)
+            self.sleep(30)
             self.connect(server)
 
     def search_server(self, server: Server) -> None:
@@ -67,6 +67,7 @@ class SessionList(Ark):
 
         pg.typewrite(server.name, interval=0.01)
         self.press("enter")
+        self.refresh()
         self.sleep(5)
 
         # attempt to find the server up to 30 times, waiting 30 seconds each time.
