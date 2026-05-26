@@ -1,5 +1,5 @@
-import pyautogui  # type:ignore[import]
-from pytesseract import pytesseract as tes  # type:ignore[import]
+import pyautogui  # type: ignore[import]
+from pytesseract import pytesseract as tes  # type: ignore[import]
 
 from .._ark import Ark
 from .._helpers import await_event
@@ -8,7 +8,7 @@ from ..exceptions import InterfaceError, TimerNotVisibleError
 
 class HUDInfo(Ark):
     """Represents the extended HUD Info in Ark.
-    
+
     Provides the ability to get the current timer assuming tek
     gauntlets are equipped.
     """
@@ -21,11 +21,17 @@ class HUDInfo(Ark):
         """Opens the HUD info, key stays in a held state!"""
         attempts = 0
         while not self.is_open():
-            pyautogui.keyDown(self.keybinds.hud_info)
+            if self.settings.toggle_hud:
+                pyautogui.press(self.keybinds.hud_info)
+            else:
+                pyautogui.keyDown(self.keybinds.hud_info)
 
             if await_event(self.is_open, max_duration=3):
                 return
-            pyautogui.keyUp(self.keybinds.hud_info)
+            if self.settings.toggle_hud:
+                pyautogui.press(self.keybinds.hud_info)
+            else:
+                pyautogui.keyUp(self.keybinds.hud_info)
             self.sleep(0.3)
             attempts += 1
             if attempts > 4:
@@ -37,7 +43,7 @@ class HUDInfo(Ark):
             self.window.locate_template(
                 f"{self.PKG_DIR}/assets/interfaces/day.png",
                 region=self._DAY_REGION,
-                confidence=0.75
+                confidence=0.75,
             )
             is not None
         )
@@ -48,14 +54,14 @@ class HUDInfo(Ark):
             self.window.locate_template(
                 f"{self.PKG_DIR}/assets/interfaces/timer.png",
                 region=self._TIMER_WORD_REGION,
-                confidence=0.7
+                confidence=0.7,
             )
             is not None
         )
 
     def get_timer(self) -> int | None:
         """Returns the timer as total seconds, or `None` if not determined.
-        
+
         If the timer is not visible, it will raise a `TimerNotVisibleError`.
         """
         self.open()
@@ -75,6 +81,6 @@ class HUDInfo(Ark):
 
         if ":" not in raw or len(raw) < 4:
             return None
-            
+
         minutes, seconds = raw.split(":")
         return (int(minutes) * 60) + int(seconds)
