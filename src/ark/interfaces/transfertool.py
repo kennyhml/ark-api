@@ -5,6 +5,8 @@ from .._helpers import await_event, timedout
 from ..exceptions import InterfaceError
 import cv2 as cv
 
+import pyautogui as pg
+
 
 class TransferTool(Ark):
 
@@ -43,7 +45,7 @@ class TransferTool(Ark):
         count = cv.countNonZero(img)
         return count > 10
 
-    def use_preset(self, preset: int, times: int):
+    def use_preset(self, preset: int, times: int, max: int = None):
         positions = [
             (869, 785),
             (869, 812),
@@ -73,6 +75,11 @@ class TransferTool(Ark):
                 self.click_at(positions[preset - 1])
                 last_click = time.time()
             self.sleep(0.3)
+
+        if max is not None:
+            self.click_at(1477, 810)
+            self.sleep(0.1)
+            pg.typewrite(str(max))
 
         for _ in range(times):
             self.transfer()

@@ -319,7 +319,7 @@ class Inventory(Ark):
             items = set(items)
 
         for item in items:
-            self.search(item)
+            self.search(item, delete_prior=False)
             self.click_at(self._DROP_ALL.location)
 
     @final
@@ -328,6 +328,7 @@ class Inventory(Ark):
         items: Optional[Iterable[Item | str] | Item | str] = None,
         delete_search: bool = True,
         enforce_from_slot: int | None = None,
+        no_button=False,
     ) -> None:
         """Searches for an iterable of Items or words and transfers all. If no
         items are passed, it simply transfers all without searching for anything.
@@ -351,7 +352,7 @@ class Inventory(Ark):
                     items is None
                     and enforce_from_slot is not None
                     and timedout(start, 15)
-                ):
+                ) or (no_button and enforce_from_slot is not None):
                     last_filled_row = 6
                     # got the folder glitch, transferring all wont work..
                     prev = pg.PAUSE
@@ -1170,6 +1171,18 @@ class Inventory(Ark):
         for idx, slot in enumerate(self.SLOTS, start=1):
             pg.moveTo(get_center(slot))
             self.press(self.keybinds.transfer)
+            self.sleep(speed)
+
+            if idx >= 6:
+                return
+
+    def drop_top_row(self, speed: int | float = 0.1) -> None:
+        if not self.is_open():
+            raise InventoryNotOpenError
+
+        for idx, slot in enumerate(self.SLOTS, start=1):
+            pg.moveTo(get_center(slot))
+            self.press(self.keybinds.drop)
             self.sleep(speed)
 
             if idx >= 6:

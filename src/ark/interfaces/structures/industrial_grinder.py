@@ -3,6 +3,7 @@ from typing import final
 from ...items import FLINT, Item
 from .._button import Button
 from .structure import Structure
+from ..._helpers import await_event
 
 
 @final
@@ -40,7 +41,7 @@ class IndustrialGrinder(Structure):
         """Presses the grind all button if it is available.
         Returns whether items got grinded or not.
         """
-        if not self.can_grind():
+        if not await_event(self.can_grind, True, 10):
             return False
 
         self.click_at(self.GRIND_ALL.location, delay=0.3)

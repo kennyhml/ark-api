@@ -4,10 +4,11 @@ from typing import Iterable, Literal, Optional, overload
 import pyautogui as pg  # type: ignore[import]
 import pydirectinput as input  # type: ignore[import]
 
+from ark.state import State
 from ..._ark import Ark
 from ..._helpers import await_event, timedout
 from ...buffs import BROKEN_BONES, HUNGRY, THIRSTY, Buff
-from ...exceptions import PlayerDidntTravelError, PlayerDiedError
+from ...exceptions import PlayerDidntTravelError, PlayerDiedError, TerminatedError
 from ...interfaces.hud_info import HUDInfo
 from ...interfaces.inventories import Inventory, PlayerInventory
 from ...interfaces.structures.structure import Structure
@@ -167,15 +168,22 @@ class Player(Ark):
 
     def spam_hotbar(self):
         """Typewrites all the hotbar keys with crystals on them to open crystals fast."""
-        pg.typewrite("".join(c for c in self.HOTBAR), interval=0.01)
+        prev = pg.PAUSE
+        pg.PAUSE = 0
+        try:
+            for kb in self.HOTBAR:
+                pg.press(kb)
+            if not State.running:
+                raise TerminatedError
+        finally:
+            pg.PAUSE = prev
 
     def set_hotbar(self) -> None:
         """Sets the hotbar using shift left click on the crystals"""
         input.keyDown("shift")
-        for _ in range(4):
-            for slot in self.HOTBAR:
-                self.press(slot)
-                self.sleep(0.5)
+        for slot in self.HOTBAR:
+            self.press(slot)
+            self.sleep(0.5)
         input.keyUp("shift")
 
     def walk(self, key, duration):
@@ -216,7 +224,6 @@ class Player(Ark):
         self.press(self.keybinds.target_inventory)
         if await_event(self.received_item, max_duration=3):
             self.sleep(0.5)
-        self._popcorn_bag()
 
     def set_first_person(self) -> None:
         """Sets the player to first person"""
