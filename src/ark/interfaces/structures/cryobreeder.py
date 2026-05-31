@@ -70,17 +70,20 @@ class CryoBreeder(Structure):
             CryobreederState.READY_TO_BREED,
             CryobreederState.BREEDING,
         ):
-            if timedout(start, 90):
+            if timedout(start, 60):
                 raise TimeoutError("Failed to start breeding")
 
             if last_click is None or timedout(last_click, 5):
                 self.click_at(self.BREED_BUTTON.location)
+                if timedout(start, 15):
+                    time.sleep(0.5)
+                    self.click_at(self.START_BREEDING_BUTTON.location)
                 last_click = time.time()
             time.sleep(0.1)
 
         last_click = None
         while self.state != CryobreederState.BREEDING:
-            if timedout(start, 90):
+            if timedout(start, 60):
                 raise TimeoutError("Failed to start breeding")
 
             if last_click is None or timedout(last_click, 3):
