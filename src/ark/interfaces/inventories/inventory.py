@@ -359,6 +359,8 @@ class Inventory(Ark):
                     pg.PAUSE = 0
                     try:
                         while not self.is_empty(enforce_from_slot):
+                            if timedout(start, 120):
+                                raise TimeoutError('Failed to tranfer all items')
                             self.window.begin_snapshot()
                             for row in range(last_filled_row, -1, -1):
                                 first_slot = row * 6

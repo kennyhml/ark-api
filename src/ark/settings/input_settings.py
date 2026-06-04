@@ -82,6 +82,8 @@ class InputSettings:
             if "ConsoleKeys" in line:
                 action_name = "ConsoleKeys"
                 key = line.split("=")[1].strip()
+                if key == 'Hyphen':
+                    key = '-'
             else:
                 pattern = r'ActionName="([^"]+)",Key=([^,]+)'
                 matches = re.search(pattern, line)

@@ -58,9 +58,12 @@ class SpawnScreen(Ark):
             The name of the bed to travel to
         """
         self.open()
-        self.search(bed_name, True)
+        self.search(bed_name, fast)
         if not fast:
             self.sleep(0.3)
+        else:
+            # we still need some delay otherwise itll click wrong
+            self.sleep(0.1)
 
         position = self._find_bed() or self._find_cd_bed() or self._find_x()
         if position is None:
