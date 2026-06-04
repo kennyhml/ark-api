@@ -41,6 +41,7 @@ class Console(Ark):
         """Sets the fps to a given value"""
         self.open()
 
+        print(f'setting fps {fps}')
         pg.typewrite(f"t.maxfps {fps}", interval=0.001)
         self.sleep(0.5)
         self.press("enter")
@@ -48,7 +49,8 @@ class Console(Ark):
     def set_gamma(self, gamma: int | str = 5):
         """Sets gamma to a given value"""
         self.open()
-
+        
+        print(f'setting gamma {gamma}')
         pg.typewrite(f"gamma {gamma}", interval=0.001)
         self.sleep(0.5)
         self.press("enter")

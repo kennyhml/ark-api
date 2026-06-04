@@ -42,11 +42,13 @@ class SessionList(Ark):
         except ServerNotFoundError:
             print("Failed to find the server after 15min!")
 
+        print('server found! joining..')
         while self.is_open():
             self.join_server()
             self.sleep(15)
 
             if not self._server_is_ghosting():
+                print('server is ghosting..')
                 continue
 
             self.sleep(30)

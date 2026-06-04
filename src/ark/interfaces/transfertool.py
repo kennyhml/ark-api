@@ -29,7 +29,8 @@ class TransferTool(Ark):
         start = time.time()
 
         while self.is_open():
-            self.press("escape")
+            self.click_at(1338, 930, button='left')
+            
             if await_event(self.is_open, False, max_duration=3):
                 return
 
