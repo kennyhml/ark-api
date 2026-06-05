@@ -62,6 +62,17 @@ class HUDInfo(Ark):
             is not None
         )
 
+    def is_visible(self) -> bool:
+        """Returns whether the HUD info interface is open."""
+        return (
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/templates/nox.png",
+                region=(13, 969, 83, 80),
+                confidence=0.75,
+            )
+            is not None
+        )
+
     def can_get_timer(self) -> bool:
         """Returns whether the timer is visible"""
         return (
