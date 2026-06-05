@@ -37,6 +37,11 @@ class SessionList(Ark):
         server :class:`Server`:
             The server to join as a Server object.
         """
+        self.click_at(394, 945)
+        self.sleep(1)
+        self.click_at(371, 894)
+        self.sleep(1)
+
         try:
             self.search_server(server)
         except ServerNotFoundError:
