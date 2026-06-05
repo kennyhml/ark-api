@@ -35,6 +35,13 @@ class CryoBreeder(Structure):
                 0.8,
             )
             is not None
+            or
+            self.window.locate_template(
+                f"{self.PKG_DIR}/assets/interfaces/activate.png",
+                self.BREED_BUTTON.region,
+                0.8,
+            )
+            is not None
         ):
             return CryobreederState.UNPREPARED
         if (
