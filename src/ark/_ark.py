@@ -71,9 +71,10 @@ class Ark:
         pg.moveTo(x, y)
 
     @state_checker
-    def press(self, key: str) -> None:
+    def press(self, key: str, focus=True) -> None:
         """Presses the given key"""
-        self.window.set_foreground()
+        if focus:
+            self.window.set_foreground()
         if key not in ["thumbmousebutton2", "thumbmousebutton"]:
             pg.press(key)
             return

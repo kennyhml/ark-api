@@ -172,7 +172,7 @@ class Player(Ark):
         pg.PAUSE = 0
         try:
             for kb in self.HOTBAR:
-                pg.press(kb)
+                self.press(kb, focus=False)
             if not State.running:
                 raise TerminatedError
         finally:
